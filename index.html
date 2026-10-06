@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#000000" />
+  <title>Pruébatelos · Ben &amp; Frank</title>
+  <link rel="icon" href="assets/ui/glasses-hint.svg" />
+  <link rel="preload" href="assets/fonts/perfectlynineties-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/apercu-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="no-debug">
+  <main id="stage">
+    <canvas id="view" aria-label="Vista de prueba virtual"></canvas>
+    <div class="shade shade-top" aria-hidden="true"></div>
+    <div class="shade shade-bottom" aria-hidden="true"></div>
+  </main>
+
+  <!-- Capa 3 · UI de kiosko (Figma: Librería Arte Mkt · Section 3) -->
+  <div id="ui" class="ui hidden">
+    <!-- Detección: Auto / Modelo -->
+    <section id="detect" class="detect" aria-label="Detección">
+      <h2 id="detect-title" class="detect-title">Detección</h2>
+      <div class="seg" role="radiogroup" aria-label="Modo de detección">
+        <button id="mode-auto" class="seg-btn" role="radio" aria-label="Automático">
+          <img class="on" src="assets/ui/sparkles-on.svg" alt="" width="14" height="14" />
+          <img class="off" src="assets/ui/sparkles-off.svg" alt="" width="14" height="14" />
+        </button>
+        <button id="mode-model" class="seg-btn" role="radio" aria-label="Elegir modelo">
+          <img class="on" src="assets/ui/glasses-on.svg" alt="" width="14" height="14" />
+          <img class="off" src="assets/ui/glasses-off.svg" alt="" width="14" height="14" />
+        </button>
+      </div>
+      <p id="mode-auto-label" class="detect-label center">Auto</p>
+      <div id="mode-model-info" class="model-info" hidden>
+        <p class="detect-label">Modelo:</p>
+        <button id="model-chip" class="chip solid"></button>
+        <div id="sizes" class="sizes" role="radiogroup" aria-label="Talla"></div>
+      </div>
+    </section>
+
+    <!-- Mensaje central: sugerencia / calibración (tap → catálogo) -->
+    <button id="hint" class="hint hidden" type="button">
+      <span class="hint-icon">
+        <img src="assets/ui/glasses-hint.svg" alt="" width="34" height="34" />
+        <svg class="ring" viewBox="0 0 44 44" aria-hidden="true"><circle class="trk" cx="22" cy="22" r="20" /><circle id="hint-ring" class="bar" cx="22" cy="22" r="20" /></svg>
+      </span>
+      <span id="hint-text" class="hint-text"><span>Para un ajuste perfecto</span><span>elige tu modelo</span></span>
+    </button>
+
+    <!-- Micas -->
+    <nav class="lenses" aria-label="Micas">
+      <div class="lens-group">
+        <div class="lens-head"><h3>Polarizadas</h3><p>Para evitar el vampirazo</p></div>
+        <div id="sw-pol" class="swatches" role="radiogroup" aria-label="Polarizadas"></div>
+      </div>
+      <img class="divider" src="assets/ui/divider.svg" alt="" width="2" height="80" />
+      <div class="lens-group">
+        <div class="lens-head"><h3>Entintadas</h3><p>Enchula tus lentes y oscurécelos con la luz</p></div>
+        <div id="sw-tint" class="swatches" role="radiogroup" aria-label="Entintadas"></div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Catálogo: ¿Qué armazón traes puesto? -->
+  <section id="picker" class="picker hidden" aria-label="Elegir modelo" aria-modal="true" role="dialog">
+    <header class="picker-head">
+      <div>
+        <h2>¿Qué armazón traes puesto?</h2>
+        <p>Checa nuestros modelos y elige justo el que traes puesto</p>
+      </div>
+      <button id="picker-close" class="icon-btn" aria-label="Cerrar"><img src="assets/ui/close.svg" alt="" width="24" height="24" /></button>
+    </header>
+    <div class="picker-body">
+      <div id="picker-list" class="picker-list"></div>
+      <nav id="picker-index" class="picker-index" aria-label="Índice alfabético"></nav>
+    </div>
+  </section>
+
+  <!-- Arranque (sólo si la cámara no abre sola) -->
+  <section id="start" class="start hidden">
+    <button id="btn-cam" class="start-btn" type="button">
+      <img src="assets/ui/glasses-hint.svg" alt="" width="34" height="34" />
+      <span>Toca para empezar</span>
+    </button>
+    <p id="status" class="status" role="status"></p>
+    <input type="file" id="file" accept="image/*,video/*" hidden />
+  </section>
+
+  <!-- Debug (oculto: 3 toques en "Detección", tecla D o ?debug) -->
+  <div id="hud" class="dbg-glass mono" hidden></div>
+  <textarea id="note" class="dbg-glass dbg-only" placeholder="Nota para Claude…" spellcheck="false"></textarea>
+  <div id="toast" class="toast" role="status"></div>
+  <section id="modal" class="modal hidden">
+    <div class="modal-card dbg-glass">
+      <h2 id="modal-title"></h2>
+      <textarea id="modal-text" class="mono" spellcheck="false"></textarea>
+      <div class="row">
+        <button id="modal-ok" class="chip solid">Aplicar</button>
+        <button id="modal-cancel" class="chip">Cerrar</button>
+      </div>
+    </div>
+  </section>
+
+  <video id="video" playsinline muted autoplay></video>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

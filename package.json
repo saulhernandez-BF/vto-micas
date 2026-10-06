@@ -1,0 +1,8 @@
+{
+  "name": "vto-micas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Probador virtual web que detecta el armazón puesto y tiñe las micas.",
+  "scripts": { "start": "node serve.mjs" }
+}
