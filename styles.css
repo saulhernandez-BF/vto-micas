@@ -150,3 +150,4 @@ body.no-debug .dbg-only { display: none; }
 .lil-gui.root { --background-color: rgba(18,18,22,0.82); --title-background-color: rgba(0,0,0,0.5); --widget-color: rgba(255,255,255,0.1);
   --focus-color: rgba(255,255,255,0.2); --number-color: #00e5ff; --font-family: system-ui, sans-serif;
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 12px; overflow: hidden; max-height: 55vh; overflow-y: auto; z-index: 15; }
+.perf { position: fixed; left: 8px; top: 8px; z-index: 60; padding: 4px 8px; border-radius: 6px; background: rgba(0,0,0,.6); font-size: 11px; pointer-events: none; }

@@ -30,26 +30,33 @@ export class Renderer {
       if (c.width !== rw || c.height !== rh) { c.width = rw; c.height = rh; }
   }
 
+  // Reflejos reales sin leer el canvas principal (leerlo frena la GPU, sobre todo en iPad/Safari):
+  // en un canvas pequeño de CPU calculamos "original × alfa(brillo)", lo recortamos con la máscara
+  // y lo pintamos encima del tinte. Equivale a D += (O − D)·h, a ~½–⅓ de resolución (los reflejos son suaves).
   restoreReflections(ctx, src, rx, ry, rw, rh, Li) {
-    this.orig ??= document.createElement('canvas');
-    const oc = this.orig;
-    if (oc.width !== rw || oc.height !== rh) { oc.width = rw; oc.height = rh; }
-    const o = oc.getContext('2d', { willReadFrequently: true });
-    o.drawImage(src, rx, ry, rw, rh, 0, 0, rw, rh);
-    const O = o.getImageData(0, 0, rw, rh).data;
-    const M = this.mask.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, rw, rh).data;
-    const img = ctx.getImageData(rx, ry, rw, rh), D = img.data;
-    const t0 = Li.keepThreshold, t1 = Math.min(1, t0 + Li.keepSoftness), k = Li.keepStrength;
+    const sc = Math.min(1, (Li.keepRes || 200) / Math.max(rw, rh));
+    const kw = Math.max(2, Math.round(rw * sc)), kh = Math.max(2, Math.round(rh * sc));
+    this.keep ??= document.createElement('canvas');
+    const kc = this.keep;
+    if (kc.width !== kw || kc.height !== kh) { kc.width = kw; kc.height = kh; this.keepCtx = null; }
+    const k = (this.keepCtx ??= kc.getContext('2d', { willReadFrequently: true }));
+    k.globalCompositeOperation = 'source-over';
+    k.drawImage(src, rx, ry, rw, rh, 0, 0, kw, kh);
+    const img = k.getImageData(0, 0, kw, kh), D = img.data;
+    const t0 = Li.keepThreshold, t1 = Math.min(1, t0 + Li.keepSoftness), ks = Li.keepStrength * 255;
+    const inv = 1 / Math.max(1e-3, t1 - t0);
     for (let i = 0; i < D.length; i += 4) {
-      const a = M[i + 3];
-      if (!a) continue;
-      const L = (0.2126 * O[i] + 0.7152 * O[i + 1] + 0.0722 * O[i + 2]) / 255;
-      if (L <= t0) continue;
-      let h = (L - t0) / (t1 - t0); h = h >= 1 ? 1 : h * h * (3 - 2 * h);
-      h *= k * (a / 255);
-      D[i] += (O[i] - D[i]) * h; D[i + 1] += (O[i + 1] - D[i + 1]) * h; D[i + 2] += (O[i + 2] - D[i + 2]) * h;
+      const L = (0.2126 * D[i] + 0.7152 * D[i + 1] + 0.0722 * D[i + 2]) / 255;
+      if (L <= t0) { D[i + 3] = 0; continue; }
+      let h = (L - t0) * inv; h = h >= 1 ? 1 : h * h * (3 - 2 * h);
+      D[i + 3] = h * ks;
     }
-    ctx.putImageData(img, rx, ry);
+    k.putImageData(img, 0, 0);
+    k.globalCompositeOperation = 'destination-in';
+    k.drawImage(this.mask, 0, 0, rw, rh, 0, 0, kw, kh);
+    k.globalCompositeOperation = 'source-over';
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(kc, 0, 0, kw, kh, rx, ry, rw, rh);
   }
 
   draw(ctx, src, W, H, st) {
@@ -129,9 +136,11 @@ export class Renderer {
     const hlA = clamp(Li.highlightStrength * lt.intensity * fres, 0, 1);
 
     const b = this.scr.getContext('2d');
+    let hlPos = [0, 0];
+    const anyScreen = refl > 0.001 || mir > 0.001 || hlA > 0.002;
+    if (anyScreen) {
     b.setTransform(1, 0, 0, 1, 0, 0); b.globalCompositeOperation = 'source-over';
     b.clearRect(0, 0, rw, rh);
-    let hlPos = [0, 0];
     for (const s of shapes) {
       const f = s.frame;
       b.setTransform(f.X[0], f.X[1], f.Y[0], f.Y[1], f.o[0] - rx, f.o[1] - ry);
@@ -169,12 +178,12 @@ export class Renderer {
     b.setTransform(1, 0, 0, 1, 0, 0);
     b.globalCompositeOperation = 'destination-in'; b.drawImage(this.mask, 0, 0);
     b.globalCompositeOperation = 'source-over';
+    }
 
     // ── Composición final sobre el video
     ctx.globalCompositeOperation = L.blend;
     ctx.drawImage(this.mul, rx, ry);
-    ctx.globalCompositeOperation = 'screen';
-    ctx.drawImage(this.scr, rx, ry);
+    if (anyScreen) { ctx.globalCompositeOperation = 'screen'; ctx.drawImage(this.scr, rx, ry); }
     ctx.globalCompositeOperation = 'source-over';
 
     // Reflejos reales: la mica demo ya refleja el entorno. Un reflejo se SUMA encima de la mica

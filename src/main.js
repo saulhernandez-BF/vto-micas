@@ -304,7 +304,7 @@ async function startCamera() {
   try {
     stopCamera();
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: app.facing, width: { ideal: 1280 }, height: { ideal: 1280 }, aspectRatio: { ideal: innerWidth / innerHeight } },
+      video: { facingMode: app.facing, width: { ideal: 960 }, height: { ideal: 960 }, aspectRatio: { ideal: innerWidth / innerHeight }, frameRate: { ideal: 30 } },
       audio: false,
     });
     app.stream = stream;
@@ -387,6 +387,9 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => { if (e.key.toLowerCase() === 'b') setBefore(false); });
 
+// Medidor de rendimiento mínimo (?perf) para probar en la tablet sin abrir el debug
+const PERF = new URLSearchParams(location.search).has('perf') ? Object.assign(document.body.appendChild(document.createElement('div')), { className: 'perf mono' }) : null;
+
 // ───────────────────────── Loop principal
 function sourceSize() {
   if (!app.src) return [0, 0];
@@ -440,7 +443,10 @@ function frame() {
   if (app.B && app.lm) {
     detector.updateGeo(app.B, app.lm, cfg, dt);
     light.update(src, W, H, app.lm, dt, cfg);
-    if (cfg.detect.enabled) detector.update(src, W, H, app.B, cfg, dt, app.lm);
+    // En equipos lentos (iPad) la búsqueda del aro corre cada 2.º frame; la forma igual sigue a la cabeza cada frame.
+    app.slow = (app.slow ?? 0) * 0.95 + (app.ms.track + app.ms.detect > 22 ? 0.05 : 0);
+    app.frameN = (app.frameN || 0) + 1;
+    if (cfg.detect.enabled && (app.slow < 0.5 || app.frameN % 2 === 0)) detector.update(src, W, H, app.B, cfg, dt * (app.slow < 0.5 ? 1 : 2), app.lm);
     app.shapes = detector.shapes(app.B, cfg);
   } else app.shapes = null;
   app.ms.detect = performance.now() - t1;
@@ -456,6 +462,10 @@ function frame() {
     debug.drawOverlays(ctx, { cfg, B: app.B, lm: app.lm, detector, light: light.s, shapes: app.shapes, W, H });
   debug.hud({ app, B: app.B, detector, light: light.s, render: renderer.info, tracker }, now);
   updateHint();
+  if (PERF && now - (app.perfT || 0) > 500) {
+    app.perfT = now;
+    PERF.textContent = `${app.fps.toFixed(0)} fps · ${app.W}×${app.H} · track ${app.ms.track.toFixed(1)} · detect ${app.ms.detect.toFixed(1)} · render ${app.ms.render.toFixed(1)} ms · ${tracker.delegate || ''}`;
+  }
 }
 
 // ───────────────────────── Arranque (kiosko: la cámara abre sola)
