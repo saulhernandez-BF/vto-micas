@@ -32,7 +32,9 @@ h2, h3, p { margin: 0; font-weight: 400; }
 .shade-top { background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 20.673%); }
 .shade-bottom { background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 20.673%); }
 
-.ui { position: fixed; inset: 0; z-index: 10; pointer-events: none; transition: opacity .4s var(--ease);
+/* Sin z-index ni position:fixed: así .ui no crea un grupo aislado y el multiply de las muestras
+   se mezcla directamente con la cámara de abajo (como una mica real). */
+.ui { position: absolute; inset: 0; pointer-events: none; transition: opacity .4s var(--ease);
   padding: max(var(--pad), env(safe-area-inset-top)) max(var(--pad), env(safe-area-inset-right)) max(var(--pad), env(safe-area-inset-bottom)) max(var(--pad), env(safe-area-inset-left));
   display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; }
 .ui > * { pointer-events: auto; }
@@ -151,3 +153,62 @@ body.no-debug .dbg-only { display: none; }
   --focus-color: rgba(255,255,255,0.2); --number-color: #00e5ff; --font-family: system-ui, sans-serif;
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 12px; overflow: hidden; max-height: 55vh; overflow-y: auto; z-index: 15; }
 .perf { position: fixed; left: 8px; top: 8px; z-index: 60; padding: 4px 8px; border-radius: 6px; background: rgba(0,0,0,.6); font-size: 11px; pointer-events: none; }
+
+/* Fotoentintadas: switch Interior / Exterior (mismo lenguaje que el toggle de Detección) */
+.lens-title { display: flex; align-items: center; gap: 12px; }
+.seg-text { align-self: center; }
+.seg-text .seg-btn { padding: 4px 10px; font: 500 12px/normal var(--text); color: var(--neutral-0); transition: background-color .25s var(--ease), color .25s var(--ease); }
+.seg-text .seg-btn[aria-checked="true"] { color: var(--primary-500); }
+#uv.idle { opacity: .55; }
+/* La muestra también vira a su tono activado en exterior */
+.swatch .dot::before { transition: inset .2s var(--ease), background-color 2.5s var(--ease); }
+.lenses.outdoor .swatch[data-photo] .dot::before { background: var(--c2); }
+
+/* Muestras híbridas: el multiply da la sensación de cristal sobre fondos claros, pero sobre ropa o
+   fondo negro desaparece. Debajo ponemos el mismo color en modo normal al 55 % (siempre se ve) y un
+   filo blanco muy sutil que marca el borde del "cristal". */
+.swatch .dot { background: color-mix(in srgb, var(--c) 55%, transparent); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+  transition: transform .2s var(--ease), background-color 2.5s var(--ease); }
+.lenses.outdoor .swatch[data-photo] .dot { background: color-mix(in srgb, var(--c2) 55%, transparent); }
+.swatch[aria-checked="true"] .dot { box-shadow: none; }
+
+/* ── Modelo reconocido en Auto (contorno; sólido = elegido a mano) */
+.auto-chip { align-self: center; margin-top: -5px; animation: chipIn .35s var(--ease); }
+.auto-chip[hidden] { display: none; }
+@keyframes chipIn { from { opacity: 0; transform: translateY(-4px) scale(.94); } to { opacity: 1; transform: none; } }
+
+/* ── Antes / después (derecha, sobre las micas: al alcance del pulgar) */
+.compare { margin-top: auto; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  touch-action: none; transition: opacity .3s var(--ease), transform .3s var(--ease), visibility .3s; }
+.compare.off { opacity: 0; transform: translateY(6px); pointer-events: none; visibility: hidden; }
+.compare-ring { position: relative; display: grid; place-items: center; width: 45px; height: 45px; border-radius: 50%;
+  border: 2px solid var(--neutral-0); isolation: isolate; transition: background-color .2s var(--ease), color .2s, transform .15s var(--ease); }
+.compare-ring::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: rgba(0,0,0,0.35); mix-blend-mode: multiply; z-index: -1; }
+.compare-ring svg { display: block; transition: transform .35s var(--ease); }
+.compare-lbl { font-size: 15px; }
+.compare[aria-pressed="true"] .compare-ring { background: var(--neutral-0); color: var(--primary-500); transform: scale(.94); }
+.compare[aria-pressed="true"] .compare-ring::before { display: none; }
+.compare[aria-pressed="true"] .compare-ring svg { transform: rotate(180deg); }
+.compare[aria-pressed="true"] .compare-lbl { font-weight: 500; }
+
+/* ── Reporte de uso */
+.report { position: fixed; inset: 0; z-index: 40; overflow: auto; background: var(--primary-500); color: var(--neutral-0);
+  padding: max(var(--pad), env(safe-area-inset-top)) var(--pad) var(--pad); display: flex; flex-direction: column; gap: 16px; transition: opacity .3s var(--ease); }
+.report-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.report-head h2 { font: 400 30px/normal var(--display); letter-spacing: -0.6px; }
+.report-head p, .report .muted { font-size: 13px; opacity: .7; }
+.report h3 { font: 400 20px/normal var(--display); letter-spacing: -0.4px; margin-top: 8px; }
+.report-range { align-self: flex-start; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.kpi { border: 1px solid rgba(255,255,255,.25); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.kpi b { font: 700 24px/normal var(--text); }
+.kpi span { font-size: 13px; opacity: .75; }
+.bar { display: grid; grid-template-columns: minmax(90px, 32%) 1fr auto; align-items: center; gap: 10px; font-size: 13px; }
+.bar i { height: 8px; border-radius: 8px; background: linear-gradient(90deg, var(--neutral-0) var(--w), rgba(255,255,255,.12) var(--w)); }
+.bar b { font-weight: 500; min-width: 40px; text-align: right; }
+.hours { display: flex; align-items: flex-end; gap: 3px; height: 80px; }
+.hours i { flex: 1; height: max(2px, var(--h)); background: var(--neutral-0); border-radius: 3px 3px 0 0; opacity: .85; }
+.hours-l { display: flex; justify-content: space-between; font-size: 11px; opacity: .6; }
+.report-actions { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 8px; }
+.report-actions .chip { font-size: 13px; padding: 8px 14px; }
+html.kiosk, html.kiosk body { cursor: none; overscroll-behavior: none; }

@@ -94,8 +94,8 @@ export class Renderer {
     const Li = cfg.light;
     const photo = lt.photo * Li.photoStrength;
     const darkCut = Li.adaptExposure * clamp((0.45 - lt.faceLum) / 0.45, 0, 1) * 0.5;
-    const dens = clamp(L.density * (1 - darkCut) + photo, 0, 1);
-    const col = hexToRgb(L.color);
+    const dens = clamp(L.density * (1 - darkCut) + photo, 0, 1) * (st.alpha ?? 1);
+    const col = hexToRgb(st.tintColor || L.color);
     const physical = L.blend === 'multiply';
     const cs = (dd) =>
       physical

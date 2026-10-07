@@ -32,6 +32,7 @@ export class LensDetector {
     this.fitter = new ShapeFitter();
     this.tpl = new TemplateFitter();
     this.catalogModel = null;
+    this.autoModel = null; // modelo reconocido solo (modo automático)
   }
 
   ensure(n) {
@@ -58,6 +59,7 @@ export class LensDetector {
     for (const s of this.sides) { s.acc.fill(1); s.accConf.fill(0); s.alt.fill(1); s.altT.fill(0); }
     this.glassesScore = 0;
     this.polScore = null;
+    this.bridge = 0; this.bridgeOn = false;
     this.detected = false;
     this.fitter.reset();
     this.tpl.reset();
@@ -104,9 +106,10 @@ export class LensDetector {
 
     // ROI que contiene ambas bandas de búsqueda
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    const catalog = d.model === 'catalog' && this.catalogModel;
+    const tplModel = d.model === 'catalog' ? this.catalogModel : d.model === 'auto' ? this.autoModel : null;
+    const catalog = !!tplModel;
     if (catalog && !this.tpl.mmPerS) this.tpl.measureScale(B, lm, cfg);
-    const bb = catalog ? this.tpl.localBounds(this.catalogModel) : null;
+    const bb = catalog ? this.tpl.localBounds(tplModel) : null;
     if (bb) {
       for (const [u, v] of [[bb.u0, bb.v0], [bb.u1, bb.v0], [bb.u0, bb.v1], [bb.u1, bb.v1], [0, bb.v0], [0, bb.v1]]) {
         const q = lensPt(B, u, v);
@@ -136,8 +139,9 @@ export class LensDetector {
 
     // Modo catálogo: contorno exacto del modelo, solo se ajusta altura y escala fina
     if (catalog) {
-      this.tpl.update(this, B, lm, cfg, dt, this.catalogModel);
-      if (d.lensDepthAuto && this.noseDepth != null) this.tpl.updateTurn(this, B, cfg, this.catalogModel, this.noseDepth);
+      this.updateBridge(lm, d, dt, B);
+      this.tpl.update(this, B, lm, cfg, dt, tplModel);
+      if (d.lensDepthAuto && this.noseDepth != null) this.tpl.updateTurn(this, B, cfg, tplModel, this.noseDepth);
       this.frameScore = this.glassesScore = this.tpl.conf;
       this.detected = true;
       this.learning = !this.tpl.locked;
@@ -230,6 +234,10 @@ export class LensDetector {
         const j = (i + 1) % n;
         if (sd.ok[i] && sd.ok[j]) { rough += Math.abs(sd.meas[i] - sd.meas[j]); rn++; }
       }
+      // Medio aro: la barra superior se ve, el nylon de abajo casi no. Medimos la mitad superior aparte.
+      let up = 0, upn = 0;
+      for (let i = 0; i < n; i++) if (Math.sin((i / n) * TAU) > 0.25) { upn++; up += sd.ok[i]; }
+      sd.upper = upn ? up / upn : 0;
       const k = side < 0 ? 'R' : 'L';
       this.stats['conf' + k] = cs / n; this.stats['accepted' + k] = ac / n;
       const peak = ac ? pk / ac : 0, rgh = rn ? rough / rn : 1;
@@ -269,6 +277,11 @@ export class LensDetector {
     if (!this.detected && this.glassesScore > d.glassesThreshold) this.detected = true;
     else if (this.detected && this.glassesScore < d.glassesThreshold * 0.7) this.detected = false;
 
+    // Medio aro: mitad superior bien vista en ambos lados (y hay armazón por puente/varillas)
+    this.upperRim = this.sides.every((sd) => sd.upper > 0.7) && (this.polScore ? Math.max(this.polScore.dark, this.polScore.line) : this.glassesScore) > 0.2;
+    // Puente sobre la nariz: segunda evidencia, útil para lentes al aire
+    this.updateBridge(lm, d, dt, B);
+
     // Aprendizaje de forma (acumulador en espacio local)
     this.learning = !d.lock && isBest && this.frameScore > d.glassesThreshold * 0.8;
     if (this.learning) {
@@ -291,14 +304,89 @@ export class LensDetector {
     return true;
   }
 
+  /**
+   * Evidencia de ARMAZÓN más allá del aro. Revisamos los 114 modelos (planos CAD): todos —también los
+   * al aire y los de medio aro— comparten tres piezas que cruzan piel lisa en dirección casi horizontal:
+   *  · el PUENTE sobre la nariz (entre los lagrimales, a la altura de las cejas o un poco abajo);
+   *  · las dos VARILLAS/bisagras que salen del borde externo de la mica hacia la oreja.
+   * La piel de esas zonas no tiene líneas horizontales; el armazón sí. Medimos el contraste de la mejor
+   * cresta/escalón por columna (menos la mediana) y su alineación. Devuelve la mejor de las tres.
+   */
+  stripEvidence(ox, oy, ux, uy, t0, t1, o0, o1, C = 9, M = 40) {
+    const vx = -uy, vy = ux;
+    const prof = new Float32Array(M), pos = [];
+    let sum = 0, bsum = 0, msum = 0;
+    for (let c = 0; c < C; c++) {
+      const t = t0 + ((t1 - t0) * c) / (C - 1);
+      const bx = ox + ux * t, by = oy + uy * t;
+      for (let k = 0; k < M; k++) {
+        const o = o0 + ((o1 - o0) * k) / (M - 1);
+        prof[k] = this.sample(bx + vx * o, by + vy * o);
+      }
+      let best = 0, bk = 0;
+      const resp = [];
+      for (let k = 2; k < M - 2; k++) {
+        const ridge = Math.abs(prof[k] - (prof[k - 2] + prof[k + 2]) / 2);
+        const step = Math.abs(prof[k + 1] - prof[k - 1]) * 0.5;
+        const r = Math.max(ridge, step); resp.push(r);
+        if (r > best) { best = r; bk = k; }
+      }
+      resp.sort((p, q) => p - q);
+      const med = resp[resp.length >> 1];
+      sum += Math.max(0, best - med); bsum += best; msum += med; pos.push(bk);
+    }
+    const mx = (C - 1) / 2, my = pos.reduce((p, q) => p + q, 0) / C;
+    let sxy = 0, sxx = 0;
+    pos.forEach((y, i) => { sxy += (i - mx) * (y - my); sxx += (i - mx) ** 2; });
+    const m = sxy / sxx;
+    const res = Math.sqrt(pos.reduce((acc, y, i) => acc + (y - (my + m * (i - mx))) ** 2, 0) / C);
+    // snr: cresta vs. textura de la piel en la misma franja → independiente de nitidez/exposición de la cámara
+    return { contrast: sum / C, snr: bsum / Math.max(1e-4, msum), consist: Math.exp(-res / 3) };
+  }
+
+  /** Presencia de lentes por piezas del armazón (puente + varillas), suavizada y con histéresis. */
+  updateBridge(lm, d, dt, B) {
+    if (!lm || !B) return;
+    this.bridge = (this.bridge ?? 0) + (this.frameEvidence(lm, B) - (this.bridge ?? 0)) * (1 - Math.exp(-dt / 0.5));
+    if (!this.bridgeOn && this.bridge > d.frameOn) this.bridgeOn = true;
+    else if (this.bridgeOn && this.bridge < d.frameOff) this.bridgeOn = false;
+  }
+
+  frameEvidence(lm, B) {
+    if (!this.gray || !this.roi) return 0;
+    const a = lm[133], b = lm[362], n = lm[168];
+    const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (d < 8) return 0;
+    const ux = (b[0] - a[0]) / d, uy = (b[1] - a[1]) / d;
+    // Puente: columnas en la franja central de la nariz, de cejas a lagrimales
+    const br = this.stripEvidence(n[0] - ux * 0.22 * d, n[1] - uy * 0.22 * d, ux, uy, 0, 0.44 * d, -0.85 * d, 0.35 * d);
+    // Varillas: desde ~el borde externo de la mica hacia la oreja, de un poco abajo a bien arriba del ojo.
+    // Con la cabeza girada una de las dos queda oculta: nos quedamos con la mejor.
+    const s = B.s, ex = B.ex;
+    const tl = (corner, dir) => {
+      const c = lm[corner];
+      const ox = c[0] + dir * ex[0] * 0.14 * s, oy = c[1] + dir * ex[1] * 0.14 * s;
+      return this.stripEvidence(ox, oy, dir * ex[0], dir * ex[1], 0, 0.22 * s, -0.32 * s * dir, 0.12 * s * dir, 7, 36);
+    };
+    const tR = tl(33, -1), tL = tl(263, 1);
+    // Calibrado con 21 fotos (2 sin lentes) + cámara en vivo: la relación cresta/piel (snr) y la
+    // alineación separan mejor que el contraste absoluto (que cambia con la nitidez de cada cámara).
+    const bScore = (br.snr * (0.3 + 0.7 * br.consist)) / 1.0;            // sin lentes ≈ 0.8, con lentes 1.2–20
+    const tScore = (t) => (t.snr / 6) * Math.min(1, t.consist / 0.4);   // varilla: línea larga y alineada
+    const temple = Math.max(tScore(tR), tScore(tL));
+    this.bridgeRaw = { bScore, temple, sB: br.snr, cB: br.consist, sR: tR.snr, cR: tR.consist, sL: tL.snr, cL: tL.consist };
+    return Math.max(bScore, temple);
+  }
+
   /** Forma final de cada mica en píxeles + marco local para gradientes/reflejos. */
   shapes(B, cfg) {
     const d = cfg.detect, p = cfg.prior, n = d.rays;
     this.ensure(n);
     const out = [];
-    if (d.model === 'catalog' && this.catalogModel) return this.tpl.shapes(B, cfg, this.catalogModel);
+    const tplModel = d.model === 'catalog' ? this.catalogModel : d.model === 'auto' ? this.autoModel : null;
+    if (tplModel) return this.tpl.shapes(B, cfg, tplModel);
     if (d.model === 'fit' && this.fitter.ps) return this.fitShapes(B, cfg);
-    if (d.model === 'auto' && !this.detected && this.fitter.ps) return this.fitShapes(B, cfg);
+    if (d.model === 'auto' && !this.detected && !this.upperRim && this.fitter.ps) return this.fitShapes(B, cfg);
     const passes = Math.round(d.spatialSmooth * 4);
     for (const sd of this.sides) {
       const other = this.sides.find((s) => s !== sd);

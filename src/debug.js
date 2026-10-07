@@ -32,7 +32,9 @@ export class Debug {
       pausa: () => A.togglePause(),
       resetForma: () => A.resetShape(),
       defaults: () => A.resetDefaults(),
+      uso: () => A.openUsage(),
     };
+    fa.add(act, 'uso').name('📊 Reporte de uso');
     fa.add(act, 'reporte').name('📋 Copiar reporte (C)');
     fa.add(act, 'config').name('Copiar config JSON');
     fa.add(act, 'importar').name('Pegar / importar config');
@@ -129,6 +131,7 @@ export class Debug {
 
     const fc = g.addFolder('Catálogo / kiosko');
     fc.add(c.catalog, 'irisMm', 10.5, 13, 0.05).name('Iris mm (escala)');
+    fc.add(c.catalog, 'scaleAdj', 0.85, 1.25, 0.01).name('Escala global micas');
     fc.add(c.catalog, 'maxYaw', 3, 30, 1).name('Calibra si yaw < °');
     fc.add(c.catalog, 'maxPitch', 3, 30, 1).name('Calibra si pitch < °');
     fc.add(c.catalog, 'calibFrames', 10, 200, 1).name('Frames calibración');

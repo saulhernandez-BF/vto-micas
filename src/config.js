@@ -1,5 +1,5 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
-export const VERSION = '0.3.1';
+export const VERSION = '0.6.0';
 
 export const DEFAULTS = {
   lens: {
@@ -12,6 +12,9 @@ export const DEFAULTS = {
     blend: 'multiply',
     feather: 1.5,        // px de suavizado del contorno
     insetPx: 1.0,        // contrae el contorno para no pintar el aro
+    outdoor: false,      // Fotoentintadas: interior (claro) / exterior (activado por UV)
+    photoInSec: 2.5,     // segundos para oscurecerse al pasar a exterior
+    photoOutSec: 3.5,    // segundos para aclararse al volver a interior
   },
   mirror: { strength: 0, color: '#8fc9ff' },
   light: {
@@ -75,12 +78,17 @@ export const DEFAULTS = {
     pantoDeg: 5.5,         // inclinación pantoscópica típica
     wrapDeg: 13.5,           // curvatura del frente hacia la sien
     procWidth: 360,
-    renderWithoutGlasses: true,
+    renderWithoutGlasses: false, // sin lentes detectados no se pinta mica
+    frameOn: 1.05,       // evidencia de armazón (puente/varillas, normalizada) para decir "trae lentes"
+    frameOff: 0.85,
     lock: false,
   },
   // Forma base en unidades locales (1 = distancia entre comisuras externas ≈ 9 cm)
   // Modo catálogo (kiosko): forma exacta por modelo
-  catalog: { modelId: '', size: '', irisMm: 11.7, maxYaw: 12, maxPitch: 12, calibFrames: 45, autoLock: true, priorWeight: 1, lostResetSec: 3, resetModelOnLost: true, suggestConf: 0.4, suggestAfterSec: 2.5,
+  catalog: { modelId: '', size: '', irisMm: 11.7, scaleAdj: 0.91, // el iris de MediaPipe sale ~9 % grande ⇒ micas de más (medido con Igor II)
+    maxYaw: 12, maxPitch: 12, calibFrames: 45, autoLock: true, priorWeight: 1, lostResetSec: 3, resetModelOnLost: true, suggestConf: 0.4, suggestAfterSec: 2.5,
+    // Reconocimiento automático del modelo (modo Auto): evaluaciones mínimas, error máximo y ventaja sobre el 2º
+    autoRecognize: true, autoMinEvals: 6, autoMaxScore: 0.15, autoMargin: 0.02, autoMinConf: 0.35,
     turnCalib: true, turnMinYaw: 15, turnMaxYaw: 50, turnFrames: 60, turnPrior: 1 },
   prior: { cx: 0.37, cy: 0.0, a: 0.27, b: 0.2, n: 2.6 },
   tracking: { minCutoff: 1.5, beta: 0.8, dCutoff: 1.0 },
@@ -96,21 +104,25 @@ export const DEFAULTS = {
 //  - Polarizadas: render de la mica de sol ÷ render óptico del mismo armazón (IGOR II OCTAGON).
 //  - Entintadas: foto de la mica sobre fondo gris ÷ fondo (tabla de colores de Zul).
 // color = transmitancia medida (lo que se pinta sobre la mica); swatch = color de muestra del Figma (UI).
+// Fotoentintadas: con luz UV (exterior) viran a café o gris. Tono activado un poco más claro que la
+// polarizada equivalente (~25–30 % de transmitancia, típico de un fotocromático activado).
+export const PHOTO_TARGETS = { cafe: '#8e867d', gris: '#767676' };
+
 export const PRESETS = [
   { id: 'pol-verde', group: 'Polarizadas', name: 'Verde', color: '#3c453d', swatch: '#42674E', density: 1, gradient: 0, mirror: 0 },
   { id: 'pol-cafe', group: 'Polarizadas', name: 'Café', color: '#685e51', swatch: '#6C5F4C', density: 1, gradient: 0, mirror: 0 },
   { id: 'pol-gris', group: 'Polarizadas', name: 'Gris', color: '#494949', swatch: '#545A5C', density: 1, gradient: 0, mirror: 0 },
   { id: 'pol-azul', group: 'Polarizadas', name: 'Azul', color: '#314767', swatch: '#005891', density: 1, gradient: 0, mirror: 0 },
   // Azufre: sin medición real todavía → aproximado a partir del color del Figma (#BF9000) aclarado como las demás entintadas
-  { id: 'azufre', group: 'Entintadas', name: 'Azufre', color: '#e2cd8c', swatch: '#BF9000', density: 1, gradient: 0, mirror: 0 },
-  { id: 'rosarito', group: 'Entintadas', name: 'Rosarito', color: '#f3f0bd', swatch: '#FFF278', density: 1, gradient: 0, mirror: 0 },
-  { id: 'celestun', group: 'Entintadas', name: 'Celestún', color: '#e8becd', swatch: '#F3D0F2', density: 1, gradient: 0, mirror: 0 },
-  { id: 'caleta', group: 'Entintadas', name: 'Caleta', color: '#a4b2c1', swatch: '#B2DFFE', density: 1, gradient: 0, mirror: 0 },
-  { id: 'mermejita', group: 'Entintadas', name: 'Mermejita', color: '#d9ddb5', swatch: '#9FB400', density: 1, gradient: 0, mirror: 0 },
-  { id: 'miramar', group: 'Entintadas', name: 'Miramar', color: '#9e9cc2', swatch: '#AA86D9', density: 1, gradient: 0, mirror: 0 },
+  { id: 'azufre', group: 'Fotoentintadas', name: 'Azufre', color: '#e2cd8c', swatch: '#BF9000', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
+  { id: 'rosarito', group: 'Fotoentintadas', name: 'Rosarito', color: '#f3f0bd', swatch: '#FFF278', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
+  { id: 'celestun', group: 'Fotoentintadas', name: 'Celestún', color: '#e8becd', swatch: '#F3D0F2', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
+  { id: 'caleta', group: 'Fotoentintadas', name: 'Caleta', color: '#a4b2c1', swatch: '#B2DFFE', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
+  { id: 'mermejita', group: 'Fotoentintadas', name: 'Mermejita', color: '#d9ddb5', swatch: '#9FB400', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
+  { id: 'miramar', group: 'Fotoentintadas', name: 'Miramar', color: '#9e9cc2', swatch: '#AA86D9', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
 ];
 
-const KEY = 'vto-micas:config:v3';
+const KEY = 'vto-micas:config:v8';
 
 export function merge(base, over) {
   if (!over || typeof over !== 'object') return base;

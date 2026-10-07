@@ -4,8 +4,12 @@ import { LensDetector } from './lensDetector.js';
 import { LightEstimator } from './light.js';
 import { Renderer } from './renderer.js';
 import { Debug } from './debug.js';
-import { loadConfig, saveConfig, resetConfig, merge, applyPreset, PRESETS, VERSION } from './config.js';
+import { loadConfig, saveConfig, resetConfig, merge, applyPreset, PRESETS, PHOTO_TARGETS, VERSION } from './config.js';
+import { hexToRgb } from './math.js';
 import { loadCatalog } from './catalog.js';
+import { AutoMatcher } from './autoMatch.js';
+import { Analytics, openReport } from './analytics.js';
+import { Kiosk } from './kiosk.js';
 
 const $ = (id) => document.getElementById(id);
 const cfg = loadConfig();
@@ -27,7 +31,9 @@ const app = {
   ms: { track: 0, detect: 0, render: 0 },
 };
 const catalog = { models: [] };
-window.__vto = { app, cfg, detector, light, renderer, catalog }; // útil para inspeccionar desde la consola
+const analytics = new Analytics();
+const kiosk = new Kiosk();
+window.__vto = { app, cfg, detector, light, renderer, catalog, analytics }; // útil para inspeccionar desde la consola
 
 // ───────────────────────── UI helpers
 let toastTimer;
@@ -117,6 +123,7 @@ const debug = new Debug(cfg, {
       } catch (e) { toast('JSON inválido: ' + e.message); }
     }),
   snapshot,
+  openUsage: () => openUsage(),
   togglePause: () => { app.paused = !app.paused; toast(app.paused ? 'Frame congelado' : 'En vivo'); },
   resetShape: () => { detector.reset(); toast('Forma reiniciada'); },
   resetDefaults: () => { resetConfig(cfg); debug.refresh(); detector.reset(); onConfigChange(); toast('Valores por defecto'); },
@@ -125,15 +132,17 @@ basis.configure(cfg.tracking);
 
 // ───────────────────────── Micas (UI de producto — Figma: Polarizadas | Entintadas)
 function renderSwatches() {
-  const groups = { Polarizadas: $('sw-pol'), Entintadas: $('sw-tint') };
+  const groups = { Polarizadas: $('sw-pol'), Fotoentintadas: $('sw-tint') };
   if (!groups.Polarizadas.childElementCount) {
     for (const p of PRESETS) {
       const host = groups[p.group];
       if (!host) continue;
       const b = document.createElement('button');
       b.className = 'swatch'; b.dataset.id = p.id; b.setAttribute('role', 'radio');
-      b.innerHTML = `<span class="dot" style="--c:${p.swatch || p.color}"></span><span class="lbl">${p.name}</span>`;
-      b.onclick = () => { applyPreset(cfg, p); debug.refresh(); onConfigChange(); };
+      const c2 = p.photo === 'cafe' ? '#6C5F4C' : p.photo === 'gris' ? '#545A5C' : '';
+      if (p.photo) b.dataset.photo = p.photo;
+      b.innerHTML = `<span class="dot" style="--c:${p.swatch || p.color};${c2 ? '--c2:' + c2 : ''}"></span><span class="lbl">${p.name}</span>`;
+      b.onclick = () => { applyPreset(cfg, p); analytics.track('preset', { id: p.id }); debug.refresh(); onConfigChange(); };
       host.appendChild(b);
     }
   }
@@ -142,6 +151,39 @@ function renderSwatches() {
     b.setAttribute('aria-checked', String(b.dataset.id === cfg.lens.preset));
     b.hidden = !!allowed && !allowed.includes(b.dataset.id);
   }
+  renderUV();
+}
+
+// ───────────────────────── Fotoentintadas: Interior / Exterior
+// Con UV la mica vira de su color a café o gris. Emulamos la cinética real (rápido al oscurecer,
+// más lento al aclarar), comprimida a pocos segundos para la tienda.
+function photoPreset() { return PRESETS.find((p) => p.id === cfg.lens.preset && p.photo); }
+function renderUV() {
+  const out = !!cfg.lens.outdoor;
+  $('uv-in').setAttribute('aria-checked', String(!out));
+  $('uv-out').setAttribute('aria-checked', String(out));
+  $('uv').classList.toggle('idle', !photoPreset());
+  document.querySelector('.lenses').classList.toggle('outdoor', out);
+}
+function setOutdoor(v) { if (v && !cfg.lens.outdoor) analytics.track('outdoor'); cfg.lens.outdoor = v; onConfigChange(); }
+$('uv-in').onclick = () => setOutdoor(false);
+$('uv-out').onclick = () => {
+  // Si traen una polarizada, pasar a exterior no cambia nada: elegimos la primera fotoentintada
+  if (!photoPreset()) { const p = PRESETS.find((x) => x.photo); if (p) applyPreset(cfg, p); }
+  setOutdoor(true);
+};
+function stepPhoto(dt) {
+  const target = cfg.lens.outdoor ? 1 : 0;
+  const tau = (cfg.lens.outdoor ? cfg.lens.photoInSec : cfg.lens.photoOutSec) / 3; // ~95 % en photo*Sec
+  app.photoT = (app.photoT ?? 0) + (target - (app.photoT ?? 0)) * (1 - Math.exp(-dt / Math.max(0.05, tau)));
+}
+function tintColor() {
+  const p = photoPreset();
+  if (!p || !(app.photoT > 0.002)) return null;
+  const a = hexToRgb(p.color), b = hexToRgb(PHOTO_TARGETS[p.photo]);
+  const t = app.photoT * app.photoT * (3 - 2 * app.photoT);
+  const h = (x) => Math.round(Math.max(0, Math.min(1, x)) * 255).toString(16).padStart(2, '0');
+  return '#' + [0, 1, 2].map((i) => h(a[i] + (b[i] - a[i]) * t)).join('');
 }
 renderSwatches();
 
@@ -165,7 +207,8 @@ function selectModel(id) {
   cfg.catalog.modelId = m ? m.id : '';
   cfg.catalog.size = '';
   detector.catalogModel = withSize(m, '');
-  if (m) cfg.detect.model = 'catalog';
+  clearAuto();
+  if (m) { cfg.detect.model = 'catalog'; analytics.track('model_pick', { id: m.id }); }
   else if (cfg.detect.model === 'catalog') cfg.detect.model = 'auto';
   if (m?.tints && !m.tints.includes(cfg.lens.preset)) {
     const p = PRESETS.find((x) => x.id === m.tints[0]);
@@ -174,12 +217,60 @@ function selectModel(id) {
   detector.reset();
   debug.refresh(); onConfigChange(); renderDetect();
 }
+// ───────────────────────── Reconocimiento automático del modelo (sólo modo Auto)
+// La detección por rayos aprende el contorno del aro; cada ~300 ms lo comparamos contra los planos de
+// todo el catálogo. Cuando un modelo gana con claridad, pasamos a su contorno de fábrica (ajuste exacto)
+// sin salir de "Auto". Si la persona se quita los lentes o se va, se olvida.
+const matcher = new AutoMatcher();
+window.__vto.matcher = matcher;
+function clearAuto() {
+  if (detector.autoModel) { detector.autoModel = null; detector.reset(); }
+  matcher.reset(); app.autoT = 0; app.noFrameSince = null;
+  renderAutoChip();
+}
+function stepAuto(now) {
+  if (cfg.detect.model !== 'auto' || !cfg.catalog.autoRecognize || !matcher.models.length || !app.B || !app.lm) return;
+  if (detector.autoModel) {
+    // Sin evidencia de armazón por un rato ⇒ ya no trae esos lentes
+    if (!detector.bridgeOn) { app.noFrameSince ??= now; if (now - app.noFrameSince > 1500) clearAuto(); }
+    else app.noFrameSince = null;
+    return;
+  }
+  if (now - (app.autoT || 0) < 300) return;
+  app.autoT = now;
+  const B = app.B, frontal = Math.abs(B.yaw) < 0.32 && Math.abs(B.pitch) < 0.3;
+  const sh = app.shapes?.find?.((x) => x.side === 1);
+  if (!frontal || !detector.detected || !sh?.radii) return;
+  const n = sh.radii.length, conf = new Float32Array(n);
+  let mc = 0;
+  for (let i = 0; i < n; i++) { conf[i] = Math.max(...detector.sides.map((sd) => sd.accConf[i])); mc += conf[i] / n; }
+  if (mc < cfg.catalog.autoMinConf) return;
+  detector.tpl.measureScale(B, app.lm, cfg);
+  matcher.evaluate(sh.radii, conf, cfg.prior, detector.tpl.mmPerS);
+  const win = matcher.decide(cfg);
+  if (!win) return;
+  const m = catalog.models.find((x) => x.id === win.id);
+  detector.autoModel = withSize(m, win.talla);
+  detector.tpl.reset();
+  analytics.track('auto_model', { id: m.id, talla: detector.autoModel.talla || '', score: +win.score.toFixed(3) });
+  renderAutoChip();
+}
+function renderAutoChip() {
+  const a = detector.autoModel, el = $('auto-chip');
+  if (!el) return;
+  el.hidden = !a || cfg.detect.model !== 'auto';
+  if (a) el.textContent = a.name + (a.sizes?.length > 1 && a.talla ? ' · ' + a.talla : '');
+}
+// Tocar el modelo reconocido lo "confirma": pasa a modo Modelo con ese armazón (y deja elegir talla)
+$('auto-chip').onclick = () => { const a = detector.autoModel; if (a) { selectModel(a.id); if (a.talla) selectSize(a.talla); } };
+
 function renderDetect() {
   const cur = catalog.models.find((m) => m.id === cfg.catalog.modelId);
   $('mode-auto').setAttribute('aria-checked', String(!cur));
   $('mode-model').setAttribute('aria-checked', String(!!cur));
   $('mode-auto-label').hidden = !!cur;
   $('mode-model-info').hidden = !cur;
+  renderAutoChip();
   const sizes = $('sizes');
   sizes.innerHTML = '';
   if (!cur) return;
@@ -304,7 +395,7 @@ async function startCamera() {
   try {
     stopCamera();
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: app.facing, width: { ideal: 720 }, height: { ideal: 720 }, aspectRatio: { ideal: innerWidth / innerHeight }, frameRate: { ideal: 30 } },
+      video: { facingMode: app.facing, width: { ideal: 1280 }, height: { ideal: 1280 }, aspectRatio: { ideal: innerWidth / innerHeight }, frameRate: { ideal: 30 } },
       audio: false,
     });
     app.stream = stream;
@@ -369,7 +460,28 @@ noteEl.addEventListener('input', () => { try { localStorage.setItem('vto-micas:n
 
 $('btn-cam').onclick = startCamera;
 $('file').onchange = (e) => e.target.files[0] && loadFile(e.target.files[0]);
-const setBefore = (v) => { app.before = v; };
+// ───────────────────────── Antes / después (mantener presionado; un toque lo deja 3 s)
+function setBefore(v) {
+  if (v && !app.before) analytics.track('before');
+  app.before = v;
+  $('compare').setAttribute('aria-pressed', String(v));
+}
+{
+  const b = $('compare');
+  let downT = 0, latch = null;
+  b.addEventListener('pointerdown', (e) => { b.setPointerCapture?.(e.pointerId); downT = performance.now(); clearTimeout(latch); setBefore(true); });
+  const up = () => {
+    if (!downT) return;
+    const tap = performance.now() - downT < 280; downT = 0;
+    if (tap) latch = setTimeout(() => setBefore(false), 3000); else setBefore(false);
+  };
+  b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
+  b.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setBefore(!app.before); } });
+}
+function openUsage() {
+  const names = Object.fromEntries([...PRESETS.map((p) => [p.id, (p.name || p.id) + (p.photo ? '' : ' polarizada')]), ...catalog.models.map((m) => [m.id, m.name])]);
+  openReport(analytics, names);
+}
 
 window.addEventListener('keydown', (e) => {
   if (e.target.closest('textarea, input, .lil-gui')) return;
@@ -420,24 +532,44 @@ function frame() {
 
   // Capa 1 · tracking (solo cuando hay frame nuevo)
   // En foto reintentamos hasta encontrar rostro (el tracker en modo VIDEO puede fallar el primer intento)
-  const isNew = app.kind === 'image' ? !app.lm && app.tries < 40 : video.currentTime !== app.lastVideoTime;
-  // Modo ligero (tablets): si el cuadro tarda > 40 ms, alternamos rostro (cuadros pares) y aro (impares)
+  // Video: sólo trabajamos cuando la cámara entrega un cuadro nuevo (la pantalla refresca a 60-120 Hz, la cámara a ~30)
+  if (app.kind !== 'image' && !app.paused) {
+    if (video.currentTime === app.lastFrameT && !app.dirty) return;
+    app.lastFrameT = video.currentTime;
+  }
+  app.dirty = false;
+  const isNew = app.kind === 'image' ? !app.lm && app.tries < 40 : true;
+  // Modo ligero (tablets): si cada cuadro tarda > 40 ms, alternamos rostro (cuadros pares) y aro (impares)
   // en vez de hacer las dos cosas en el mismo cuadro; el tinte se redibuja en todos.
   app.frameN = (app.frameN || 0) + 1;
-  app.frameMs = (app.frameMs ?? 16) * 0.9 + dt * 1000 * 0.1;
-  if (app.frameMs > 40) app.lite = true; else if (app.frameMs < 26) app.lite = false;
-  const trackTurn = !app.lite || app.frameN % 2 === 0 || !app.lm;
+  const fdt = app.lastWorkT ? now - app.lastWorkT : 33; app.lastWorkT = now;
+  const wdt = app.kind === 'image' ? dt : Math.min(0.1, fdt / 1000); // dt entre cuadros procesados
+  app.frameMs = (app.frameMs ?? 33) * 0.9 + Math.min(200, fdt) * 0.1;
+  // Cámara a ~30 fps ⇒ 33 ms por cuadro. Si rostro + aro + dibujo no caben, modo ligero (con histéresis).
+  const work = app.ms.track + (app.ms.detectFull || 0) + app.ms.render;
+  if (work > 30) app.lite = true; else if (work < 20) app.lite = false;
+  // Calidad de cámara: empezamos en alta (~1280 px). Si tras 4 s el equipo sigue en modo ligero, bajamos a 720.
+  if (app.kind === 'camera' && app.lite && Math.max(app.W, app.H) > 900) {
+    app.liteSince ??= now;
+    if (now - app.liteSince > 4000 && !app.downscaled) {
+      app.downscaled = true;
+      app.stream?.getVideoTracks()[0]?.applyConstraints({ width: { ideal: 720 }, height: { ideal: 720 } }).catch(() => {});
+    }
+  } else app.liteSince = null;
+  const trackTurn = !app.lite || app.frameN % 3 !== 0 || !app.lm; // ligero: 2 de cada 3 cuadros rostro, 1 de 3 aro
   if (!app.paused && isNew && trackTurn && tracker.landmarker) {
-    app.lastVideoTime = video.currentTime;
     app.tries++;
     const t0 = performance.now();
     const lm = tracker.detect(src, W, H, now);
+    app.cnt = app.cnt || { t: 0, d: 0, r: 0 }; app.cnt.t++;
     app.ms.track = performance.now() - t0;
     if (lm) { app.lm = lm; app.noFace = 0; app.B = basis.update(lm, now / 1000); }
     else if (app.kind !== 'image' && ++app.noFace > 6) { app.lm = null; app.B = null; basis.reset(); }
     if (!lm && app.kind === 'camera') {
       app.lostSince ??= now;
       if (now - app.lostSince > cfg.catalog.lostResetSec * 1000) { // nuevo cliente
+        if (cfg.lens.outdoor) setOutdoor(false);
+        if (detector.autoModel || matcher.evals) clearAuto();
         if (cfg.catalog.resetModelOnLost && cfg.catalog.modelId) selectModel('');
         else if (detector.tpl.frames || detector.fitter.iters) detector.reset();
       }
@@ -447,24 +579,44 @@ function frame() {
   // Luz + detección de aro
   const t1 = performance.now();
   if (app.B && app.lm) {
-    detector.updateGeo(app.B, app.lm, cfg, dt);
+    detector.updateGeo(app.B, app.lm, cfg, wdt);
     // La luz ambiente cambia lento: basta medirla cada 4 cuadros
-    if (app.frameN % 4 === 0 || !light.init) light.update(src, W, H, app.lm, dt * 4, cfg);
-    const detectTurn = !app.lite || app.frameN % 2 === 1;
+    if (app.frameN % 4 === 0 || !light.init) light.update(src, W, H, app.lm, wdt * 4, cfg);
+    const detectTurn = !app.lite || app.frameN % 3 === 0;
     if (cfg.detect.enabled && detectTurn) {
       const S = cfg.detect.samples;
       if (app.lite) cfg.detect.samples = Math.min(S, 22);
-      detector.update(src, W, H, app.B, cfg, app.lite ? dt * 2 : dt, app.lm);
+      const td = performance.now();
+      detector.update(src, W, H, app.B, cfg, app.lite ? wdt * 3 : wdt, app.lm);
+      app.ms.detectFull = performance.now() - td;
+      if (app.cnt) app.cnt.d++;
       cfg.detect.samples = S;
     }
     app.shapes = detector.shapes(app.B, cfg);
+    stepAuto(now);
   } else app.shapes = null;
   app.ms.detect = performance.now() - t1;
 
-  // Capa 2 · render
+  // Capa 2 · render (en cámara, sólo si llegó un cuadro nuevo: no tiene caso repintar el mismo)
+  if (app.cnt) app.cnt.r++;
   const t2 = performance.now();
-  const tint = cfg.view.showTint && !app.before && (detector.detected || cfg.detect.renderWithoutGlasses || !cfg.detect.enabled);
-  renderer.draw(ctx, src, W, H, { cfg, B: app.B, light: light.s, shapes: app.shapes, tint, lite: app.lite, frameN: app.frameN });
+  // Sólo pintamos mica si hay lentes: en automático, cuando la detección de aro los confirma; con modelo
+  // elegido, siempre (el cliente nos dijo cuál trae). Aparece/desaparece con un fundido corto.
+  const hasGlasses = cfg.detect.model === 'catalog' ? !!detector.catalogModel && detector.bridgeOn
+    : detector.autoModel ? detector.bridgeOn
+    : (detector.detected || detector.bridgeOn || cfg.detect.renderWithoutGlasses || !cfg.detect.enabled);
+  const want = app.B && hasGlasses ? 1 : 0;
+  app.tintA = (app.tintA ?? 0) + (want - (app.tintA ?? 0)) * (1 - Math.exp(-wdt / 0.12));
+  const tint = cfg.view.showTint && !app.before && app.tintA > 0.02;
+  stepPhoto(wdt);
+  if (app.kind === 'camera') {
+    analytics.tick(now, wdt, { face: !!app.lm, lostMs: app.lostSince ? now - app.lostSince : 0, lostLimitMs: cfg.catalog.lostResetSec * 1000,
+      lens: cfg.lens.preset, tinted: tint && app.tintA > 0.5, preset: cfg.lens.preset });
+    app.frameAt = Date.now();
+  }
+  const canCompare = app.before || (app.B && app.tintA > 0.5);
+  if (canCompare !== app.canCompare) { app.canCompare = canCompare; $('compare').classList.toggle('off', !canCompare); }
+  renderer.draw(ctx, src, W, H, { cfg, B: app.B, light: light.s, shapes: app.shapes, tint, lite: app.lite, frameN: app.frameN, tintColor: tintColor(), alpha: app.tintA });
   app.ms.render = performance.now() - t2;
 
   // Capa 3 · debug
@@ -472,14 +624,18 @@ function frame() {
     debug.drawOverlays(ctx, { cfg, B: app.B, lm: app.lm, detector, light: light.s, shapes: app.shapes, W, H });
   debug.hud({ app, B: app.B, detector, light: light.s, render: renderer.info, tracker }, now);
   updateHint();
-  if (PERF && now - (app.perfT || 0) > 500) {
+  if (PERF && now - (app.perfT || 0) > 1000) {
+    const c = app.cnt || { t: 0, d: 0, r: 0 }, sec = (now - (app.perfT || now)) / 1000 || 1;
+    app.rates = `cámara ${(c.r / sec).toFixed(0)} · rostro ${(c.t / sec).toFixed(0)} · aro ${(c.d / sec).toFixed(0)} /s`;
+    app.cnt = { t: 0, d: 0, r: 0 };
     app.perfT = now;
-    PERF.textContent = `v${VERSION} · ${app.fps.toFixed(0)} fps${app.lite ? ' (ligero)' : ''} · ${app.W}×${app.H} · track ${app.ms.track.toFixed(1)} · detect ${app.ms.detect.toFixed(1)} · render ${app.ms.render.toFixed(1)} ms · ${tracker.delegate || ''}`;
+    PERF.textContent = `v${VERSION} · ${app.rates || ''}${app.lite ? ' (ligero)' : ''} · ${app.W}×${app.H} · track ${app.ms.track.toFixed(1)} · detect ${app.ms.detect.toFixed(1)} · render ${app.ms.render.toFixed(1)} ms · ${tracker.delegate || ''}`;
   }
 }
 
 // ───────────────────────── Arranque (kiosko: la cámara abre sola)
 (async () => {
+  cfg.lens.outdoor = false; // cada arranque empieza en interior
   if (new URLSearchParams(location.search).has('debug')) cfg.debug.panel = true;
   else cfg.debug.panel = false;
   debug.refresh(); onConfigChange();
@@ -490,6 +646,7 @@ function frame() {
     await tracker.init(setStatus);
     try {
       catalog.models = await loadCatalog();
+      matcher.setCatalog(catalog.models);
       const m = catalog.models.find((x) => x.id === cfg.catalog.modelId);
       detector.catalogModel = m ? withSize(m, cfg.catalog.size) : null;
       if (!m && cfg.detect.model === 'catalog') cfg.detect.model = 'auto';
@@ -504,4 +661,11 @@ function frame() {
     setStatus('No se pudo cargar el modelo de rostro: ' + e.message);
   }
   requestAnimationFrame(frame);
+  kiosk.start({
+    lastFrameAt: () => app.frameAt || Date.now(),
+    isCamera: () => app.kind === 'camera' && !app.paused,
+    restartCamera: () => startCamera(),
+    idleMs: () => (app.lm ? 0 : performance.now() - (app.lostSince ?? 0)),
+  });
+  if (new URLSearchParams(location.search).has('reporte')) openUsage();
 })();

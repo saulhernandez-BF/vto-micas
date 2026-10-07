@@ -9,7 +9,7 @@
   <link rel="icon" href="assets/ui/glasses-hint.svg" />
   <link rel="preload" href="assets/fonts/perfectlynineties-regular.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/apercu-regular.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="styles.css?v=0.3.1" />
+  <link rel="stylesheet" href="styles.css?v=0.6.0" />
 </head>
 <body class="no-debug">
   <main id="stage">
@@ -34,6 +34,7 @@
         </button>
       </div>
       <p id="mode-auto-label" class="detect-label center">Auto</p>
+      <button id="auto-chip" class="chip auto-chip" hidden aria-label="Modelo reconocido. Toca para confirmarlo"></button>
       <div id="mode-model-info" class="model-info" hidden>
         <p class="detect-label">Modelo:</p>
         <button id="model-chip" class="chip solid"></button>
@@ -50,6 +51,14 @@
       <span id="hint-text" class="hint-text"><span>Para un ajuste perfecto</span><span>elige tu modelo</span></span>
     </button>
 
+    <!-- Antes / después: mantener presionado (un toque lo deja 3 s) -->
+    <button id="compare" class="compare off" type="button" aria-pressed="false" aria-label="Ver sin mica (antes)">
+      <span class="compare-ring">
+        <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM8 13V3a5 5 0 0 1 0 10Zm0-12.75a7.75 7.75 0 1 1 0 15.5 7.75 7.75 0 0 1 0-15.5Z" fill="currentColor" fill-rule="evenodd"/></svg>
+      </span>
+      <span class="compare-lbl">Antes</span>
+    </button>
+
     <!-- Micas -->
     <nav class="lenses" aria-label="Micas">
       <div class="lens-group">
@@ -58,8 +67,16 @@
       </div>
       <img class="divider" src="assets/ui/divider.svg" alt="" width="2" height="80" />
       <div class="lens-group">
-        <div class="lens-head"><h3>Entintadas</h3><p>Enchula tus lentes y oscurécelos con la luz</p></div>
-        <div id="sw-tint" class="swatches" role="radiogroup" aria-label="Entintadas"></div>
+        <div class="lens-head">
+          <div class="lens-title"><h3>Fotoentintadas</h3>
+            <div id="uv" class="seg seg-text" role="radiogroup" aria-label="Luz">
+              <button id="uv-in" class="seg-btn" role="radio" aria-checked="true">Interior</button>
+              <button id="uv-out" class="seg-btn" role="radio" aria-checked="false">Exterior</button>
+            </div>
+          </div>
+          <p>Enchula tus lentes y oscurécelos con la luz</p>
+        </div>
+        <div id="sw-tint" class="swatches" role="radiogroup" aria-label="Fotoentintadas"></div>
       </div>
     </nav>
   </div>
@@ -105,6 +122,6 @@
   </section>
 
   <video id="video" playsinline muted autoplay></video>
-  <script type="module" src="src/main.js?v=0.3.1"></script>
+  <script type="module" src="src/main.js?v=0.6.0"></script>
 </body>
 </html>

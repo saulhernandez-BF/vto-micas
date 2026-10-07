@@ -5,7 +5,7 @@
 import { toImg, lensPt, clamp, sub, dot } from './math.js';
 
 const CY = { min: -0.2, max: 0.14, n: 25 };
-const K = { min: 0.86, max: 1.14, n: 11 };
+const K = { min: 0.88, max: 1.14, n: 15 }; // el plano da el tamaño real: el ajuste fino sólo corrige poco
 // Calibración de giro: profundidad extra del plano × wrap, evaluada solo con la cabeza girada
 const DEP = { min: -0.05, max: 0.45, n: 11 };
 const WRP = { min: 0, max: 24, n: 9 };
@@ -65,7 +65,7 @@ export class TemplateFitter {
     const d = (a, b) => Math.hypot(lm[a][0] - lm[b][0], lm[a][1] - lm[b][1]);
     const irisPx = (d(469, 471) + d(474, 476)) / 2;
     if (irisPx > 2) {
-      this.iris.push((cfg.catalog.irisMm / irisPx) * B.s);
+      this.iris.push((cfg.catalog.irisMm / irisPx) * B.s / (cfg.catalog.scaleAdj || 1));
       if (this.iris.length > 90) this.iris.shift();
     }
     const t = [...this.iris].sort((a, b) => a - b);
