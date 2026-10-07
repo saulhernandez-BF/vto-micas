@@ -1,5 +1,5 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
-export const VERSION = '0.1.0';
+export const VERSION = '0.3.1';
 
 export const DEFAULTS = {
   lens: {

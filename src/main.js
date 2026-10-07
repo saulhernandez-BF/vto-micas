@@ -474,7 +474,7 @@ function frame() {
   updateHint();
   if (PERF && now - (app.perfT || 0) > 500) {
     app.perfT = now;
-    PERF.textContent = `${app.fps.toFixed(0)} fps${app.lite ? ' (ligero)' : ''} · ${app.W}×${app.H} · track ${app.ms.track.toFixed(1)} · detect ${app.ms.detect.toFixed(1)} · render ${app.ms.render.toFixed(1)} ms · ${tracker.delegate || ''}`;
+    PERF.textContent = `v${VERSION} · ${app.fps.toFixed(0)} fps${app.lite ? ' (ligero)' : ''} · ${app.W}×${app.H} · track ${app.ms.track.toFixed(1)} · detect ${app.ms.detect.toFixed(1)} · render ${app.ms.render.toFixed(1)} ms · ${tracker.delegate || ''}`;
   }
 }
 
