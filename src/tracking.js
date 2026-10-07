@@ -25,7 +25,9 @@ export class FaceTracker {
       minFacePresenceConfidence: 0.5,
       minTrackingConfidence: 0.5,
     });
+    const forceCPU = new URLSearchParams(location.search).has('cpu'); // para comparar en tablets
     try {
+      if (forceCPU) throw new Error('CPU forzado (?cpu)');
       this.landmarker = await FaceLandmarker.createFromOptions(fileset, opts('GPU'));
       this.delegate = 'GPU';
     } catch (e) {

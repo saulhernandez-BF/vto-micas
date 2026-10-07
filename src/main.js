@@ -304,7 +304,7 @@ async function startCamera() {
   try {
     stopCamera();
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: app.facing, width: { ideal: 960 }, height: { ideal: 960 }, aspectRatio: { ideal: innerWidth / innerHeight }, frameRate: { ideal: 30 } },
+      video: { facingMode: app.facing, width: { ideal: 720 }, height: { ideal: 720 }, aspectRatio: { ideal: innerWidth / innerHeight }, frameRate: { ideal: 30 } },
       audio: false,
     });
     app.stream = stream;
@@ -421,7 +421,13 @@ function frame() {
   // Capa 1 · tracking (solo cuando hay frame nuevo)
   // En foto reintentamos hasta encontrar rostro (el tracker en modo VIDEO puede fallar el primer intento)
   const isNew = app.kind === 'image' ? !app.lm && app.tries < 40 : video.currentTime !== app.lastVideoTime;
-  if (!app.paused && isNew && tracker.landmarker) {
+  // Modo ligero (tablets): si el cuadro tarda > 40 ms, alternamos rostro (cuadros pares) y aro (impares)
+  // en vez de hacer las dos cosas en el mismo cuadro; el tinte se redibuja en todos.
+  app.frameN = (app.frameN || 0) + 1;
+  app.frameMs = (app.frameMs ?? 16) * 0.9 + dt * 1000 * 0.1;
+  if (app.frameMs > 40) app.lite = true; else if (app.frameMs < 26) app.lite = false;
+  const trackTurn = !app.lite || app.frameN % 2 === 0 || !app.lm;
+  if (!app.paused && isNew && trackTurn && tracker.landmarker) {
     app.lastVideoTime = video.currentTime;
     app.tries++;
     const t0 = performance.now();
@@ -442,11 +448,15 @@ function frame() {
   const t1 = performance.now();
   if (app.B && app.lm) {
     detector.updateGeo(app.B, app.lm, cfg, dt);
-    light.update(src, W, H, app.lm, dt, cfg);
-    // En equipos lentos (iPad) la búsqueda del aro corre cada 2.º frame; la forma igual sigue a la cabeza cada frame.
-    app.slow = (app.slow ?? 0) * 0.95 + (app.ms.track + app.ms.detect > 22 ? 0.05 : 0);
-    app.frameN = (app.frameN || 0) + 1;
-    if (cfg.detect.enabled && (app.slow < 0.5 || app.frameN % 2 === 0)) detector.update(src, W, H, app.B, cfg, dt * (app.slow < 0.5 ? 1 : 2), app.lm);
+    // La luz ambiente cambia lento: basta medirla cada 4 cuadros
+    if (app.frameN % 4 === 0 || !light.init) light.update(src, W, H, app.lm, dt * 4, cfg);
+    const detectTurn = !app.lite || app.frameN % 2 === 1;
+    if (cfg.detect.enabled && detectTurn) {
+      const S = cfg.detect.samples;
+      if (app.lite) cfg.detect.samples = Math.min(S, 22);
+      detector.update(src, W, H, app.B, cfg, app.lite ? dt * 2 : dt, app.lm);
+      cfg.detect.samples = S;
+    }
     app.shapes = detector.shapes(app.B, cfg);
   } else app.shapes = null;
   app.ms.detect = performance.now() - t1;
@@ -454,7 +464,7 @@ function frame() {
   // Capa 2 · render
   const t2 = performance.now();
   const tint = cfg.view.showTint && !app.before && (detector.detected || cfg.detect.renderWithoutGlasses || !cfg.detect.enabled);
-  renderer.draw(ctx, src, W, H, { cfg, B: app.B, light: light.s, shapes: app.shapes, tint });
+  renderer.draw(ctx, src, W, H, { cfg, B: app.B, light: light.s, shapes: app.shapes, tint, lite: app.lite, frameN: app.frameN });
   app.ms.render = performance.now() - t2;
 
   // Capa 3 · debug
@@ -464,7 +474,7 @@ function frame() {
   updateHint();
   if (PERF && now - (app.perfT || 0) > 500) {
     app.perfT = now;
-    PERF.textContent = `${app.fps.toFixed(0)} fps · ${app.W}×${app.H} · track ${app.ms.track.toFixed(1)} · detect ${app.ms.detect.toFixed(1)} · render ${app.ms.render.toFixed(1)} ms · ${tracker.delegate || ''}`;
+    PERF.textContent = `${app.fps.toFixed(0)} fps${app.lite ? ' (ligero)' : ''} · ${app.W}×${app.H} · track ${app.ms.track.toFixed(1)} · detect ${app.ms.detect.toFixed(1)} · render ${app.ms.render.toFixed(1)} ms · ${tracker.delegate || ''}`;
   }
 }
 

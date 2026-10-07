@@ -86,7 +86,7 @@ export class Renderer {
     m.setTransform(1, 0, 0, 1, 0, 0); m.clearRect(0, 0, rw, rh);
     m.setTransform(1, 0, 0, 1, -rx, -ry);
     m.fillStyle = '#fff';
-    if (this.hasFilter && L.feather > 0) m.filter = `blur(${L.feather}px)`;
+    if (this.hasFilter && L.feather > 0 && !st.lite) m.filter = `blur(${L.feather}px)`; // el blur de canvas es caro en Android
     for (const p of paths) m.fill(p);
     if (this.hasFilter) m.filter = 'none';
 
@@ -188,7 +188,11 @@ export class Renderer {
 
     // Reflejos reales: la mica demo ya refleja el entorno. Un reflejo se SUMA encima de la mica
     // (no pasa a través del tinte), así que devolvemos las zonas brillantes del original.
-    if (Li.keepReal && Li.keepStrength > 0) this.restoreReflections(ctx, src, rx, ry, rw, rh, Li);
+    if (Li.keepReal && Li.keepStrength > 0) {
+      // En modo ligero recalculamos los reflejos cada 2 cuadros y reusamos el último (se mueve con la mica)
+      if (!st.lite || st.frameN % 2 === 0 || !this.keep) this.restoreReflections(ctx, src, rx, ry, rw, rh, Li);
+      else ctx.drawImage(this.keep, 0, 0, this.keep.width, this.keep.height, rx, ry, rw, rh);
+    }
 
     this.info = { density: dens, fresnel: fres, highlight: hlPos, hlAlpha: hlA };
   }
