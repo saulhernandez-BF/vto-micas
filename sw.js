@@ -20,7 +20,7 @@ self.addEventListener('fetch', (e) => {
       return res;
     }));
   } else if (url.origin === self.location.origin && !url.pathname.includes('/media/')) {
-    e.respondWith(fetch(req).then((res) => {
+    e.respondWith(fetch(req.mode === 'navigate' ? req.url : req, { cache: 'no-cache' }).then((res) => { // revalida siempre: versiones nuevas al instante
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
       return res;
     }).catch(() => caches.match(req, { ignoreSearch: true })));

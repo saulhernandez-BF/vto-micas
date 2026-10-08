@@ -33,8 +33,10 @@ export class Debug {
       resetForma: () => A.resetShape(),
       defaults: () => A.resetDefaults(),
       uso: () => A.openUsage(),
+      ajuste: () => A.openTune(),
     };
     fa.add(act, 'uso').name('📊 Reporte de uso');
+    fa.add(act, 'ajuste').name('🎯 Ajuste por modelo');
     fa.add(act, 'reporte').name('📋 Copiar reporte (C)');
     fa.add(act, 'config').name('Copiar config JSON');
     fa.add(act, 'importar').name('Pegar / importar config');

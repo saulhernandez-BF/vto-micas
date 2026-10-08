@@ -161,11 +161,15 @@ export class TemplateFitter {
   shapes(B, cfg, model) {
     if (!this.mmPerS) return null;
     const w = cfg.detect.lensPlane, inset = cfg.lens.insetPx / B.s;
+    // Ajuste fino por modelo (medido en tienda): escala alrededor del centro de la mica y desplazamiento vertical en mm
+    const t = model.tune || {}, ts = t.k || 1, dyL = ((t.dy || 0) * this.best.k) / this.mmPerS;
     return this.local(model, this.best.cy, this.best.k).map((L) => {
+      L.cv += dyL;
       const pts = L.pts.map(([u, v]) => {
-        const du = u - L.cu, dv = v - L.cv, r = Math.hypot(du, dv) || 1, f = Math.max(0, r - inset) / r;
+        const du = (u - L.cu) * ts, dv = (v + dyL - L.cv) * ts, r = Math.hypot(du, dv) || 1, f = Math.max(0, r - inset) / r;
         return lensPt(B, L.cu + du * f, L.cv + dv * f);
       });
+      L.hu *= ts; L.hv *= ts;
       const o = lensPt(B, L.cu, L.cv);
       const X = lensPt(B, L.cu + L.hu, L.cv), Y = lensPt(B, L.cu, L.cv - L.hv);
       return { side: L.side, pts, radii: null, frame: { o, X: [X[0] - o[0], X[1] - o[1]], Y: [Y[0] - o[0], Y[1] - o[1]] } };

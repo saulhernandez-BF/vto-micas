@@ -9,7 +9,8 @@ import { hexToRgb } from './math.js';
 import { loadCatalog } from './catalog.js';
 import { AutoMatcher } from './autoMatch.js';
 import { Analytics, openReport } from './analytics.js';
-import { Kiosk } from './kiosk.js';
+import { Kiosk, startUpdater } from './kiosk.js';
+import { Tuner, applyTunes } from './tune.js';
 
 const $ = (id) => document.getElementById(id);
 const cfg = loadConfig();
@@ -124,6 +125,7 @@ const debug = new Debug(cfg, {
     }),
   snapshot,
   openUsage: () => openUsage(),
+  openTune: () => tuner.open(),
   togglePause: () => { app.paused = !app.paused; toast(app.paused ? 'Frame congelado' : 'En vivo'); },
   resetShape: () => { detector.reset(); toast('Forma reiniciada'); },
   resetDefaults: () => { resetConfig(cfg); debug.refresh(); detector.reset(); onConfigChange(); toast('Valores por defecto'); },
@@ -222,6 +224,7 @@ function selectModel(id) {
 // todo el catálogo. Cuando un modelo gana con claridad, pasamos a su contorno de fábrica (ajuste exacto)
 // sin salir de "Auto". Si la persona se quita los lentes o se va, se olvida.
 const matcher = new AutoMatcher();
+const tuner = new Tuner({ catalog, cfg, detector, matcher, app, selectModel: (id) => selectModel(id), selectSize: (t) => selectSize(t), openPicker: () => openPicker(), toast: (m) => toast(m) });
 window.__vto.matcher = matcher;
 function clearAuto() {
   if (detector.autoModel) { detector.autoModel = null; detector.reset(); }
@@ -348,7 +351,46 @@ function openPicker() {
 }
 function closePicker() { $('picker').classList.add('hidden'); }
 $('picker-close').onclick = closePicker;
-$('hint').onclick = openPicker;
+$('hint').onclick = () => { if (!app.guide) openPicker(); };
+
+// ───────────────────────── Guía de distancia y encuadre
+// Medimos la cara en coordenadas de PANTALLA (el canvas se recorta con object-fit: cover). La distancia
+// entre comisuras externas ≈ 9 cm: si ocupa muy poco del ancho, la persona está lejos (el aro se ve chico
+// y el ajuste empeora); si ocupa mucho, está demasiado cerca. Un mensaje sólo aparece si la condición dura
+// 0.8 s, y se va en cuanto se corrige (sin parpadeos).
+function framingGuide() {
+  const now = performance.now();
+  let want = null;
+  if (app.B && app.lm && app.kind === 'camera' && cfg.guide.enabled) {
+    const vw = innerWidth, vh = innerHeight, k = Math.max(vw / app.W, vh / app.H);
+    const ox = (vw - app.W * k) / 2, oy = (vh - app.H * k) / 2;
+    const r = (app.B.s * k) / vw;
+    const lm = app.lm, cx = ((lm[33][0] + lm[263][0]) / 2) * k + ox, cy = ((lm[33][1] + lm[263][1]) / 2) * k + oy;
+    if (r < cfg.guide.minRel) want = ['Acércate un poco', 'a la pantalla'];
+    else if (r > cfg.guide.maxRel) want = ['Aléjate un poco', 'de la pantalla'];
+    else if (Math.abs(cx - vw / 2) > vw * cfg.guide.centerTol || cy < vh * 0.18 || cy > vh * 0.62) want = ['Colócate al centro', 'de la pantalla'];
+  }
+  const key = want ? want[0] : '';
+  if (key !== app.guideKey) { app.guideKey = key; app.guideSince = now; }
+  if (!want) return null;
+  return now - app.guideSince > cfg.guide.delaySec * 1000 ? want : (app.guide ? want : null);
+}
+
+// ───────────────────────── Pantalla de espera (Figma 1561:1700)
+// Sin nadie enfrente: cámara oscurecida + "Pruébate solar o entintado al instante". En cuanto aparece una
+// cara (0.4 s seguidos) pasa directo a la vista de espejo; si se va por idleSec, regresa.
+function stepIdle(now) {
+  const el = $('idle');
+  if (app.kind !== 'camera' || tuner.on) { if (app.idle) { app.idle = false; el.classList.add('hidden'); $('ui').classList.remove('idle'); } return; }
+  if (app.lm) { app.faceSince ??= now; app.noFaceSince = null; app.everFace = true; } else { app.faceSince = null; app.noFaceSince ??= now; }
+  const wait = app.everFace ? cfg.guide.idleSec * 1000 : 0; // al arrancar se ve directo la pantalla de espera
+  const show = app.idle ? !(app.faceSince && now - app.faceSince > 400) : !!(app.noFaceSince && now - app.noFaceSince >= wait);
+  if (show !== app.idle) {
+    app.idle = show;
+    el.classList.toggle('hidden', !show);
+    $('ui').classList.toggle('idle', show);
+  }
+}
 
 // ───────────────────────── Mensaje central: sugerir modelo / calibrar
 function setHint(lines, { calibrating = false, prog = 0, pulse = false } = {}) {
@@ -368,7 +410,10 @@ function updateHint() {
   if (autoLow) app.lowSince ??= performance.now(); else app.lowSince = null;
   const suggest = autoLow && performance.now() - app.lowSince > cfg.catalog.suggestAfterSec * 1000;
   const pickerOpen = !$('picker').classList.contains('hidden');
-  if (!app.B || app.before || pickerOpen) setHint(null);
+  const guide = framingGuide();
+  app.guide = !!guide;
+  if (!app.B || app.before || pickerOpen || app.idle) setHint(null);
+  else if (guide) setHint(guide, { pulse: false });
   else if (catalogMode && !tpl.locked)
     setHint(tpl.frontal ? ['Mantén la vista', 'al frente…'] : ['Voltea a ver de frente', 'a la cámara'], { calibrating: true, prog: tpl.progress });
   else if (suggest) setHint(['Para un ajuste perfecto', 'elige tu modelo'], { pulse: true });
@@ -570,7 +615,7 @@ function frame() {
       if (now - app.lostSince > cfg.catalog.lostResetSec * 1000) { // nuevo cliente
         if (cfg.lens.outdoor) setOutdoor(false);
         if (detector.autoModel || matcher.evals) clearAuto();
-        if (cfg.catalog.resetModelOnLost && cfg.catalog.modelId) selectModel('');
+        if (cfg.catalog.resetModelOnLost && cfg.catalog.modelId && !tuner.on) selectModel('');
         else if (detector.tpl.frames || detector.fitter.iters) detector.reset();
       }
     } else app.lostSince = null;
@@ -594,6 +639,7 @@ function frame() {
     }
     app.shapes = detector.shapes(app.B, cfg);
     stepAuto(now);
+    tuner.tick();
   } else app.shapes = null;
   app.ms.detect = performance.now() - t1;
 
@@ -616,13 +662,14 @@ function frame() {
   }
   const canCompare = app.before || (app.B && app.tintA > 0.5);
   if (canCompare !== app.canCompare) { app.canCompare = canCompare; $('compare').classList.toggle('off', !canCompare); }
-  renderer.draw(ctx, src, W, H, { cfg, B: app.B, light: light.s, shapes: app.shapes, tint, lite: app.lite, frameN: app.frameN, tintColor: tintColor(), alpha: app.tintA });
+  renderer.draw(ctx, src, W, H, { cfg, B: app.B, light: light.s, shapes: app.shapes, tint, lite: app.lite, frameN: app.frameN, tintColor: tintColor(), alpha: app.tintA, polarized: !photoPreset() });
   app.ms.render = performance.now() - t2;
 
   // Capa 3 · debug
   if (!app.before)
     debug.drawOverlays(ctx, { cfg, B: app.B, lm: app.lm, detector, light: light.s, shapes: app.shapes, W, H });
   debug.hud({ app, B: app.B, detector, light: light.s, render: renderer.info, tracker }, now);
+  stepIdle(now);
   updateHint();
   if (PERF && now - (app.perfT || 0) > 1000) {
     const c = app.cnt || { t: 0, d: 0, r: 0 }, sec = (now - (app.perfT || now)) / 1000 || 1;
@@ -646,6 +693,7 @@ function frame() {
     await tracker.init(setStatus);
     try {
       catalog.models = await loadCatalog();
+      applyTunes(catalog.models);
       matcher.setCatalog(catalog.models);
       const m = catalog.models.find((x) => x.id === cfg.catalog.modelId);
       detector.catalogModel = m ? withSize(m, cfg.catalog.size) : null;
@@ -668,4 +716,7 @@ function frame() {
     idleMs: () => (app.lm ? 0 : performance.now() - (app.lostSince ?? 0)),
   });
   if (new URLSearchParams(location.search).has('reporte')) openUsage();
+  if (new URLSearchParams(location.search).has('ajuste')) tuner.open();
+  // Actualización silenciosa: si subiste una versión nueva, se recarga sola cuando no hay nadie enfrente
+  startUpdater(VERSION, () => !!app.idle || (app.kind === 'camera' && !app.lm && performance.now() - (app.lostSince ?? 0) > 30000));
 })();

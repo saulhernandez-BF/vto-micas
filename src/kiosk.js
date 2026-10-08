@@ -59,3 +59,25 @@ export class Kiosk {
     if (this.h.idleMs() > 60000) location.reload();
   }
 }
+
+/**
+ * Actualización silenciosa (todas las tablets, no sólo kiosko): cada 10 min revisa la versión publicada;
+ * si cambió, recarga en cuanto la tablet esté libre. Una sola vez por versión (evita ciclos con caché).
+ */
+export function startUpdater(current, isIdle) {
+  let pending = null;
+  const check = async () => {
+    try {
+      const r = await fetch('src/config.js?t=' + Date.now(), { cache: 'no-store' });
+      const v = (await r.text()).match(/VERSION\s*=\s*'([^']+)'/)?.[1];
+      if (v && v !== current) pending = v;
+    } catch {}
+  };
+  setInterval(check, 10 * 60 * 1000);
+  setTimeout(check, 60 * 1000);
+  setInterval(() => {
+    if (!pending || !isIdle()) return;
+    try { if (sessionStorage.getItem('vto-micas:reloaded-for') === pending) return; sessionStorage.setItem('vto-micas:reloaded-for', pending); } catch {}
+    location.reload();
+  }, 5000);
+}

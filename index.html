@@ -9,7 +9,8 @@
   <link rel="icon" href="assets/ui/glasses-hint.svg" />
   <link rel="preload" href="assets/fonts/perfectlynineties-regular.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/apercu-regular.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="styles.css?v=0.6.0" />
+  <link rel="preload" href="assets/fonts/perfectlynineties-italic.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="styles.css?v=0.7.0" />
 </head>
 <body class="no-debug">
   <main id="stage">
@@ -17,6 +18,12 @@
     <div class="shade shade-top" aria-hidden="true"></div>
     <div class="shade shade-bottom" aria-hidden="true"></div>
   </main>
+
+  <!-- Pantalla de espera (Figma 1561:1700): la cámara sigue viva detrás, oscurecida -->
+  <section id="idle" class="idle hidden" aria-label="Pruébate solar o entintado al instante">
+    <img class="idle-logo" src="assets/ui/logo-bf.svg" alt="Ben &amp; Frank" width="171.2" height="20" />
+    <h1 class="idle-title"><span>Pruébate</span><em>solar</em><span>o</span><em>entintado</em><span>al instante</span></h1>
+  </section>
 
   <!-- Capa 3 · UI de kiosko (Figma: Librería Arte Mkt · Section 3) -->
   <div id="ui" class="ui hidden">
@@ -122,6 +129,6 @@
   </section>
 
   <video id="video" playsinline muted autoplay></video>
-  <script type="module" src="src/main.js?v=0.6.0"></script>
+  <script type="module" src="src/main.js?v=0.7.0"></script>
 </body>
 </html>

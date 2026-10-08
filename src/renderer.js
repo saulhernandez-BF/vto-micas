@@ -91,7 +91,9 @@ export class Renderer {
     if (this.hasFilter) m.filter = 'none';
 
     // Densidad efectiva: base + fotocromático − adaptación a oscuridad
-    const Li = cfg.light;
+    // Polarizadas: el filtro corta el reflejo del entorno sobre la mica ("evitar el vampirazo")
+    const g = st.polarized ? (cfg.lens.polGlare ?? 0.3) : 1;
+    const Li = g < 1 ? { ...cfg.light, keepStrength: cfg.light.keepStrength * g, reflection: cfg.light.reflection * g, highlightStrength: cfg.light.highlightStrength * g } : cfg.light;
     const photo = lt.photo * Li.photoStrength;
     const darkCut = Li.adaptExposure * clamp((0.45 - lt.faceLum) / 0.45, 0, 1) * 0.5;
     const dens = clamp(L.density * (1 - darkCut) + photo, 0, 1) * (st.alpha ?? 1);

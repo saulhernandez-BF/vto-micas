@@ -20,7 +20,7 @@ export class FaceTracker {
     const opts = (delegate) => ({
       baseOptions: { modelAssetPath: MODEL, delegate },
       runningMode: 'VIDEO',
-      numFaces: 1,
+      numFaces: 3, // en tienda se asoma el acompañante: elegimos la cara principal
       minFaceDetectionConfidence: 0.5,
       minFacePresenceConfidence: 0.5,
       minTrackingConfidence: 0.5,
@@ -44,9 +44,23 @@ export class FaceTracker {
     const ts = Math.max(nowMs, this.lastTs + 1);
     this.lastTs = ts;
     const res = this.landmarker.detectForVideo(src, ts);
-    const f = res?.faceLandmarks?.[0];
-    if (!f) return null;
-    return f.map((p) => [p.x * W, p.y * H, p.z * W]);
+    const faces = res?.faceLandmarks;
+    if (!faces?.length) { this.prev = null; return null; }
+    // Cara principal = la más grande (más cerca de la tablet). Si ya seguíamos a alguien, le damos
+    // preferencia mientras siga siendo comparable (evita saltar entre personas de tamaño parecido).
+    let best = null, bestScore = -Infinity;
+    for (const f of faces) {
+      const a = f[33], b = f[263], size = Math.hypot((a.x - b.x) * W, (a.y - b.y) * H);
+      const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+      let score = size;
+      if (this.prev) {
+        const d = Math.hypot((cx - this.prev.cx) * W, (cy - this.prev.cy) * H);
+        if (d < this.prev.size * 1.5) score *= 1.35; // misma persona que el cuadro anterior
+      }
+      if (score > bestScore) { bestScore = score; best = { f, cx, cy, size }; }
+    }
+    this.prev = best; this.faces = faces.length;
+    return best.f.map((p) => [p.x * W, p.y * H, p.z * W]);
   }
 }
 

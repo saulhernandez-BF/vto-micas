@@ -2,6 +2,9 @@
 // Unidad = "visita": empieza cuando aparece un rostro ≥ 1 s y termina cuando se va (lostResetSec).
 // Por visita guardamos duración, segundos con mica pintada, segundos por color, cambios de color,
 // uso de Exterior, de "Antes" y modelo elegido / reconocido. Sin imágenes ni datos personales.
+import { send, getStore, setStore, remoteEnabled } from './remote.js';
+import { VERSION } from './config.js';
+
 const KEY = 'vto-micas:analytics:v1';
 const MAX_VISITS = 8000;
 
@@ -11,16 +14,19 @@ export class Analytics {
   constructor({ device = '' } = {}) {
     this.device = device;
     this.visits = [];
-    try { const o = JSON.parse(localStorage.getItem(KEY) || '{}'); this.visits = o.visits || []; this.device = o.device || device || Math.random().toString(36).slice(2, 8); } catch {}
+    try { const o = JSON.parse(localStorage.getItem(KEY) || '{}'); this.visits = o.visits || []; this.sent = o.sent || 0; this.device = o.device || device || Math.random().toString(36).slice(2, 8); } catch {}
+    this.sent ??= 0;
     this.cur = null; this.faceSince = null; this.dirty = false;
     setInterval(() => this.save(), 5000);
+    setInterval(() => this.flush(), 10 * 60 * 1000);
+    setTimeout(() => this.flush(), 30000);
     addEventListener('pagehide', () => { this.end(Date.now()); this.save(); });
   }
 
   save() {
     if (!this.dirty) return;
     this.dirty = false;
-    try { localStorage.setItem(KEY, JSON.stringify({ device: this.device, visits: this.visits })); } catch {}
+    try { localStorage.setItem(KEY, JSON.stringify({ device: this.device, visits: this.visits, sent: this.sent })); } catch {}
   }
 
   /** Llamar en cada cuadro procesado. face: hay rostro; lostMs: tiempo sin rostro; lens: preset visible (o null). */
@@ -49,8 +55,19 @@ export class Analytics {
     for (const k in v.dwell) v.dwell[k] = Math.round(v.dwell[k] * 10) / 10;
     v.dur = Math.round(v.dur * 10) / 10; v.tintSec = Math.round(v.tintSec * 10) / 10;
     this.visits.push(v);
-    if (this.visits.length > MAX_VISITS) this.visits.splice(0, this.visits.length - MAX_VISITS);
+    if (this.visits.length > MAX_VISITS) { const cut = this.visits.length - MAX_VISITS; this.visits.splice(0, cut); this.sent = Math.max(0, this.sent - cut); }
     this.dirty = true;
+    if (this.visits.length - this.sent >= 5) this.flush();
+  }
+
+  /** Manda a la hoja central las visitas que aún no se enviaron (en lotes). */
+  async flush() {
+    if (!remoteEnabled() || this.flushing || this.sent >= this.visits.length) return;
+    this.flushing = true;
+    const batch = this.visits.slice(this.sent, this.sent + 200), upto = this.sent + batch.length;
+    const ok = await send('visits', { device: this.device, version: VERSION, visits: batch });
+    if (ok) { this.sent = upto; this.dirty = true; this.save(); }
+    this.flushing = false;
   }
 
   /** Eventos sueltos dentro de la visita en curso. */
@@ -64,7 +81,7 @@ export class Analytics {
     else if (e === 'auto_model') v.auto = data.id;
   }
 
-  clear() { this.visits = []; this.cur = null; this.dirty = true; this.save(); }
+  clear() { this.visits = []; this.sent = 0; this.cur = null; this.dirty = true; this.save(); }
 
   summary(fromT = 0) {
     const vs = this.visits.filter((v) => v.t >= fromT);
@@ -81,7 +98,7 @@ export class Analytics {
     const top = (o) => Object.entries(o).sort((a, b) => b[1] - a[1]);
     const durs = vs.map((v) => v.dur).sort((a, b) => a - b);
     return {
-      device: this.device, visits: n,
+      device: this.device, store: getStore(), pending: this.visits.length - this.sent, visits: n,
       medianSec: n ? durs[n >> 1] : 0,
       withGlassesPct: n ? (100 * vs.filter((v) => v.tintSec > 1).length) / n : 0,
       avgColors: n ? sum((v) => new Set(v.colors).size) / n : 0,
@@ -95,17 +112,18 @@ export class Analytics {
   }
 
   csv() {
-    const head = ['fecha', 'hora', 'dispositivo', 'duracion_s', 'con_mica_s', 'colores', 'cambios', 'exterior', 'antes', 'modelo_elegido', 'modelo_auto', 'segundos_por_color'];
+    const store = getStore();
+    const head = ['fecha', 'hora', 'tienda', 'dispositivo', 'duracion_s', 'con_mica_s', 'colores', 'cambios', 'exterior', 'antes', 'modelo_elegido', 'modelo_auto', 'segundos_por_color'];
     const esc = (x) => { const s = String(x ?? ''); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
     const rows = this.visits.map((v) => {
       const d = new Date(v.t);
-      return [day(v.t), d.toTimeString().slice(0, 8), this.device, v.dur, v.tintSec, v.colors.join(' > '), v.picks, v.outdoor, v.before, v.model, v.auto,
+      return [day(v.t), d.toTimeString().slice(0, 8), store, this.device, v.dur, v.tintSec, v.colors.join(' > '), v.picks, v.outdoor, v.before, v.model, v.auto,
         Object.entries(v.dwell).map(([k, s]) => `${k}:${s}`).join(' ')].map(esc).join(',');
     });
     return '﻿' + [head.join(','), ...rows].join('\n');
   }
 
-  json() { return JSON.stringify({ app: 'vto-micas', device: this.device, exported: new Date().toISOString(), visits: this.visits }, null, 1); }
+  json() { return JSON.stringify({ app: 'vto-micas', store: getStore(), device: this.device, exported: new Date().toISOString(), visits: this.visits }, null, 1); }
 }
 
 /** Vista de reporte (?reporte o desde el debug). names: id → nombre legible. */
@@ -125,7 +143,9 @@ export function openReport(an, names = {}) {
     const hmax = Math.max(1, ...s.hours);
     el.innerHTML = `
       <header class="report-head">
-        <div><h2>Reporte de uso</h2><p>Dispositivo ${s.device} · datos anónimos guardados sólo en este equipo</p></div>
+        <div><h2>Reporte de uso</h2>
+          <p>Tienda <input class="store-in" data-store value="${s.store}" placeholder="nombre-de-tienda" spellcheck="false" autocapitalize="off"> · dispositivo ${s.device}</p>
+          <p>${remoteEnabled() ? (s.pending ? `${s.pending} visitas por enviar a la hoja central` : 'Todo enviado a la hoja central') : 'Datos anónimos guardados sólo en este equipo'}</p></div>
         <button class="icon-btn" data-a="close" aria-label="Cerrar"><img src="assets/ui/close.svg" alt="" width="24" height="24"></button>
       </header>
       <div class="seg seg-text report-range" role="radiogroup">
@@ -147,6 +167,7 @@ export function openReport(an, names = {}) {
       <div class="report-actions">
         <button class="chip solid" data-a="csv">Descargar CSV</button>
         <button class="chip" data-a="json">Descargar JSON</button>
+        ${remoteEnabled() ? '<button class="chip" data-a="send">Enviar ahora</button>' : ''}
         <button class="chip" data-a="clear">Borrar datos</button>
       </div>`;
   };
@@ -155,14 +176,16 @@ export function openReport(an, names = {}) {
     a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
+  el.onchange = (e) => { if (e.target.matches('[data-store]')) { setStore(e.target.value); draw(); } };
   el.onclick = (e) => {
     const r = e.target.closest('[data-r]')?.dataset.r;
     if (r) { range = r; draw(); return; }
     const a = e.target.closest('[data-a]')?.dataset.a;
-    const stamp = new Date().toISOString().slice(0, 10);
+    const stamp = new Date().toISOString().slice(0, 10), st = getStore() || an.device;
     if (a === 'close') el.classList.add('hidden');
-    else if (a === 'csv') dl(`vto-micas-uso-${an.device}-${stamp}.csv`, an.csv(), 'text/csv;charset=utf-8');
-    else if (a === 'json') dl(`vto-micas-uso-${an.device}-${stamp}.json`, an.json(), 'application/json');
+    else if (a === 'send') an.flush().then(draw);
+    else if (a === 'csv') dl(`vto-micas-uso-${st}-${stamp}.csv`, an.csv(), 'text/csv;charset=utf-8');
+    else if (a === 'json') dl(`vto-micas-uso-${st}-${stamp}.json`, an.json(), 'application/json');
     else if (a === 'clear') {
       const b = e.target.closest('[data-a]');
       if (b.dataset.confirm) { an.clear(); draw(); } else { b.dataset.confirm = '1'; b.textContent = '¿Seguro? Toca otra vez'; }

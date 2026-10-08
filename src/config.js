@@ -1,9 +1,12 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
-export const VERSION = '0.6.0';
+export const VERSION = '0.7.0';
+// Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
+export const REMOTE_URL = '';
 
 export const DEFAULTS = {
   lens: {
     preset: 'celestun',
+    polGlare: 0.3,     // polarizadas: fracción de reflejos que pasa (0 = sin reflejos)
     color: '#e8becd',
     density: 1,        // 0 = transparente, 1 = color pleno
     gradient: 0,         // cuánto se aclara hacia abajo
@@ -90,6 +93,7 @@ export const DEFAULTS = {
     // Reconocimiento automático del modelo (modo Auto): evaluaciones mínimas, error máximo y ventaja sobre el 2º
     autoRecognize: true, autoMinEvals: 6, autoMaxScore: 0.15, autoMargin: 0.02, autoMinConf: 0.35,
     turnCalib: true, turnMinYaw: 15, turnMaxYaw: 50, turnFrames: 60, turnPrior: 1 },
+  guide: { enabled: true, minRel: 0.12, maxRel: 0.4, centerTol: 0.15, delaySec: 0.8, idleSec: 6 },
   prior: { cx: 0.37, cy: 0.0, a: 0.27, b: 0.2, n: 2.6 },
   tracking: { minCutoff: 1.5, beta: 0.8, dCutoff: 1.0 },
   view: { mirror: true, showTint: true },
@@ -122,7 +126,7 @@ export const PRESETS = [
   { id: 'miramar', group: 'Fotoentintadas', name: 'Miramar', color: '#9e9cc2', swatch: '#AA86D9', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
 ];
 
-const KEY = 'vto-micas:config:v8';
+const KEY = 'vto-micas:config:v9';
 
 export function merge(base, over) {
   if (!over || typeof over !== 'object') return base;
