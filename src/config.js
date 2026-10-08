@@ -1,5 +1,5 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
-export const VERSION = '0.7.1';
+export const VERSION = '0.8.1';
 // Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
 export const REMOTE_URL = 'https://script.google.com/macros/s/AKfycbyPvqpy4w7FGJdoeyv9uiuFAWJc5VqALXZBugLimZMUqeIU2FZ81lEhLA3s1xzhMQ4/exec';
 
@@ -126,7 +126,7 @@ export const PRESETS = [
   { id: 'miramar', group: 'Fotoentintadas', name: 'Miramar', color: '#9e9cc2', swatch: '#AA86D9', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
 ];
 
-const KEY = 'vto-micas:config:v9';
+const KEY = 'vto-micas:config:v10';
 
 export function merge(base, over) {
   if (!over || typeof over !== 'object') return base;

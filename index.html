@@ -10,7 +10,7 @@
   <link rel="preload" href="assets/fonts/perfectlynineties-regular.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/apercu-regular.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/perfectlynineties-italic.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="styles.css?v=0.7.1" />
+  <link rel="stylesheet" href="styles.css?v=0.8.1" />
 </head>
 <body class="no-debug">
   <main id="stage">
@@ -20,7 +20,7 @@
   </main>
 
   <!-- Pantalla de espera (Figma 1561:1700): la cámara sigue viva detrás, oscurecida -->
-  <section id="idle" class="idle hidden" aria-label="Pruébate solar o entintado al instante">
+  <section id="idle" class="idle-screen hidden" aria-label="Pruébate solar o entintado al instante">
     <img class="idle-logo" src="assets/ui/logo-bf.svg" alt="Ben &amp; Frank" width="171.2" height="20" />
     <h1 class="idle-title"><span>Pruébate</span><em>solar</em><span>o</span><em>entintado</em><span>al instante</span></h1>
   </section>
@@ -30,7 +30,7 @@
     <!-- Detección: Auto / Modelo -->
     <section id="detect" class="detect" aria-label="Detección">
       <h2 id="detect-title" class="detect-title">Detección</h2>
-      <div class="seg" role="radiogroup" aria-label="Modo de detección">
+      <div id="mode-seg" class="seg seg-toggle" role="button" tabindex="0" aria-label="Cambiar entre detección automática y elegir modelo">
         <button id="mode-auto" class="seg-btn" role="radio" aria-label="Automático">
           <img class="on" src="assets/ui/sparkles-on.svg" alt="" width="14" height="14" />
           <img class="off" src="assets/ui/sparkles-off.svg" alt="" width="14" height="14" />
@@ -59,9 +59,9 @@
     </button>
 
     <!-- Antes / después: mantener presionado (un toque lo deja 3 s) -->
-    <button id="compare" class="compare off" type="button" aria-pressed="false" aria-label="Ver sin mica (antes)">
+    <button id="compare" class="compare off" type="button" aria-pressed="false" aria-label="Mantén oprimido para ver sin mica">
       <span class="compare-ring">
-        <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM8 13V3a5 5 0 0 1 0 10Zm0-12.75a7.75 7.75 0 1 1 0 15.5 7.75 7.75 0 0 1 0-15.5Z" fill="currentColor" fill-rule="evenodd"/></svg>
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM8 13V3a5 5 0 0 1 0 10Zm0-12.75a7.75 7.75 0 1 1 0 15.5 7.75 7.75 0 0 1 0-15.5Z" fill="currentColor" fill-rule="evenodd"/></svg>
       </span>
       <span class="compare-lbl">Antes</span>
     </button>
@@ -76,7 +76,7 @@
       <div class="lens-group">
         <div class="lens-head">
           <div class="lens-title"><h3>Fotoentintadas</h3>
-            <div id="uv" class="seg seg-text" role="radiogroup" aria-label="Luz">
+            <div id="uv" class="seg seg-text seg-toggle" role="button" tabindex="0" aria-label="Cambiar entre interior y exterior">
               <button id="uv-in" class="seg-btn" role="radio" aria-checked="true">Interior</button>
               <button id="uv-out" class="seg-btn" role="radio" aria-checked="false">Exterior</button>
             </div>
@@ -104,12 +104,15 @@
   </section>
 
   <!-- Arranque (sólo si la cámara no abre sola) -->
+  <!-- Arranque / cámara no disponible (mismo lenguaje que la pantalla de espera) -->
   <section id="start" class="start hidden">
-    <button id="btn-cam" class="start-btn" type="button">
-      <img src="assets/ui/glasses-hint.svg" alt="" width="34" height="34" />
-      <span>Toca para empezar</span>
-    </button>
+    <img class="idle-logo" src="assets/ui/logo-bf.svg" alt="Ben &amp; Frank" width="171.2" height="20" />
+    <h2 id="start-title" class="start-title" hidden></h2>
     <p id="status" class="status" role="status"></p>
+    <button id="btn-cam" class="start-btn" type="button" hidden>
+      <img src="assets/ui/glasses-hint.svg" alt="" width="34" height="34" />
+      <span>Reintentar</span>
+    </button>
     <input type="file" id="file" accept="image/*,video/*" hidden />
   </section>
 
@@ -129,6 +132,6 @@
   </section>
 
   <video id="video" playsinline muted autoplay></video>
-  <script type="module" src="src/main.js?v=0.7.1"></script>
+  <script type="module" src="src/main.js?v=0.8.1"></script>
 </body>
 </html>

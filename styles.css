@@ -127,9 +127,13 @@ h2, h3, p { margin: 0; font-weight: 400; }
 .picker-index button:disabled { opacity: .3; cursor: default; }
 
 /* ── Arranque (fallback si la cámara no abre sola) */
-.start { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #000; transition: opacity .4s var(--ease), visibility .4s; }
+.start { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; background: var(--primary-500); text-align: center; padding: 0 40px; transition: opacity .4s var(--ease), visibility .4s; }
+.start-title { font: 400 min(56px, 9vw)/1 var(--display); letter-spacing: -0.03em; max-width: 12em; }
+.start-title em { font-style: italic; }
+.start .status { font-size: 15px; opacity: .85; max-width: 26em; line-height: 1.4; }
 .start-btn { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border: 2px solid var(--neutral-0); border-radius: 210px; font: 700 15px/normal var(--text); }
 .start-btn:disabled { opacity: .5; }
+.start-btn[hidden] { display: none; }
 .status { font-size: 13px; opacity: .7; min-height: 1.3em; text-align: center; padding: 0 30px; }
 
 /* ── Debug (oculto en kiosko) */
@@ -180,12 +184,12 @@ body.no-debug .dbg-only { display: none; }
 
 /* ── Antes / después (derecha, sobre las micas: al alcance del pulgar) */
 .compare { margin-top: auto; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; gap: 5px;
-  touch-action: none; transition: opacity .3s var(--ease), transform .3s var(--ease), visibility .3s; }
+  touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; transition: opacity .3s var(--ease), transform .3s var(--ease), visibility .3s; }
 .compare.off { opacity: 0; transform: translateY(6px); pointer-events: none; visibility: hidden; }
-.compare-ring { position: relative; display: grid; place-items: center; width: 45px; height: 45px; border-radius: 50%;
+.compare-ring { position: relative; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
   border: 2px solid var(--neutral-0); isolation: isolate; transition: background-color .2s var(--ease), color .2s, transform .15s var(--ease); }
 .compare-ring::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: rgba(0,0,0,0.35); mix-blend-mode: multiply; z-index: -1; }
-.compare-ring svg { display: block; transition: transform .35s var(--ease); }
+.compare-ring svg { display: block; width: 14px; height: 14px; transition: transform .35s var(--ease); }
 .compare-lbl { font-size: 15px; }
 .compare[aria-pressed="true"] .compare-ring { background: var(--neutral-0); color: var(--primary-500); transform: scale(.94); }
 .compare[aria-pressed="true"] .compare-ring::before { display: none; }
@@ -215,17 +219,17 @@ body.no-debug .dbg-only { display: none; }
 html.kiosk, html.kiosk body { cursor: none; overscroll-behavior: none; }
 
 /* ── Pantalla de espera (Figma 1561:1700) */
-.idle { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px;
+.idle-screen { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px;
   background: rgba(0, 0, 0, 0.2); text-align: center; pointer-events: none;
   transition: opacity .6s var(--ease), visibility .6s; }
 .idle-logo { display: block; width: 171.2px; height: 20px; }
 .idle-title { margin: 0; display: flex; flex-direction: column; font: 400 min(95px, 12.8vw)/0.937 var(--display); letter-spacing: -0.04em; }
 .idle-title em { font-style: italic; letter-spacing: -0.0067em; }
-.idle > * { transition: transform .8s var(--ease), opacity .6s var(--ease); }
-.idle.hidden > * { transform: translateY(-14px); opacity: 0; }
-.idle.hidden .idle-title { transform: translateY(-24px); }
-.ui.idle { opacity: 0; pointer-events: none; }
-.ui.idle > * { pointer-events: none; }
+.idle-screen > * { transition: transform .8s var(--ease), opacity .6s var(--ease); }
+.idle-screen.hidden > * { transform: translateY(-14px); opacity: 0; }
+.idle-screen.hidden .idle-title { transform: translateY(-24px); }
+.ui.waiting { opacity: 0; pointer-events: none; }
+.ui.waiting > * { pointer-events: none; }
 .store-in { font: inherit; color: inherit; background: none; border: 0; border-bottom: 1px solid rgba(255,255,255,.5); padding: 0 2px; width: 12em; outline: none; -webkit-user-select: text; user-select: text; }
 
 /* ── Ajuste por modelo (herramienta interna, ?ajuste) */
@@ -250,3 +254,9 @@ html.kiosk, html.kiosk body { cursor: none; overscroll-behavior: none; }
 .tune-recog { font: 400 24px/normal var(--display); text-align: center; }
 html.tuning .lenses, html.tuning .compare { visibility: hidden; }
 html.tuning .picker { z-index: 40; }
+
+/* Switches de dos estados: todo el componente es un solo botón */
+.seg-toggle { cursor: pointer; transition: transform .15s var(--ease); touch-action: manipulation; }
+.seg-toggle:active { transform: scale(.95); }
+.seg-toggle .seg-btn { pointer-events: none; }
+.seg-toggle .seg-btn:active { transform: none; }

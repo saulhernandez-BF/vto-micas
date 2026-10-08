@@ -168,8 +168,9 @@ function renderUV() {
   document.querySelector('.lenses').classList.toggle('outdoor', out);
 }
 function setOutdoor(v) { if (v && !cfg.lens.outdoor) analytics.track('outdoor'); cfg.lens.outdoor = v; onConfigChange(); }
-$('uv-in').onclick = () => setOutdoor(false);
-$('uv-out').onclick = () => {
+// Todo el switch es un solo botón: cada toque alterna Interior ↔ Exterior
+$('uv').onclick = () => {
+  if (cfg.lens.outdoor) { setOutdoor(false); return; }
   // Si traen una polarizada, pasar a exterior no cambia nada: elegimos la primera fotoentintada
   if (!photoPreset()) { const p = PRESETS.find((x) => x.photo); if (p) applyPreset(cfg, p); }
   setOutdoor(true);
@@ -291,8 +292,8 @@ function renderDetect() {
     }
   }
 }
-$('mode-auto').onclick = () => selectModel('');
-$('mode-model').onclick = openPicker;
+// Todo el switch alterna: en Modelo → regresa a Auto; en Auto → abre el catálogo para elegir modelo
+$('mode-seg').onclick = () => { if (cfg.catalog.modelId) selectModel(''); else openPicker(); };
 $('model-chip').onclick = openPicker;
 
 // Debug oculto: 3 toques rápidos sobre "Detección"
@@ -381,14 +382,14 @@ function framingGuide() {
 // cara (0.4 s seguidos) pasa directo a la vista de espejo; si se va por idleSec, regresa.
 function stepIdle(now) {
   const el = $('idle');
-  if (app.kind !== 'camera' || tuner.on) { if (app.idle) { app.idle = false; el.classList.add('hidden'); $('ui').classList.remove('idle'); } return; }
+  if (app.kind !== 'camera' || tuner.on) { if (app.idle) { app.idle = false; el.classList.add('hidden'); $('ui').classList.remove('waiting'); } return; }
   if (app.lm) { app.faceSince ??= now; app.noFaceSince = null; app.everFace = true; } else { app.faceSince = null; app.noFaceSince ??= now; }
   const wait = app.everFace ? cfg.guide.idleSec * 1000 : 0; // al arrancar se ve directo la pantalla de espera
   const show = app.idle ? !(app.faceSince && now - app.faceSince > 400) : !!(app.noFaceSince && now - app.noFaceSince >= wait);
   if (show !== app.idle) {
     app.idle = show;
     el.classList.toggle('hidden', !show);
-    $('ui').classList.toggle('idle', show);
+    $('ui').classList.toggle('waiting', show);
   }
 }
 
@@ -435,8 +436,29 @@ function stopCamera() {
   app.stream = null;
 }
 
+// Cámara no disponible: pantalla con el estilo de la de espera, mensaje según la causa y reintento solo
+const CAM_ERRORS = {
+  NotAllowedError: ['Activa la <em>cámara</em>', 'Permite el acceso a la cámara para este sitio en los ajustes del navegador y toca Reintentar.'],
+  SecurityError: ['Activa la <em>cámara</em>', 'Permite el acceso a la cámara para este sitio en los ajustes del navegador y toca Reintentar.'],
+  NotFoundError: ['No encontramos la <em>cámara</em>', 'Revisa que la tablet tenga cámara frontal disponible.'],
+  OverconstrainedError: ['No encontramos la <em>cámara</em>', 'Revisa que la tablet tenga cámara frontal disponible.'],
+  NotReadableError: ['La cámara está <em>ocupada</em>', 'Cierra otras apps que la estén usando. Lo intentamos de nuevo en unos segundos.'],
+  ended: ['Se desconectó la <em>cámara</em>', 'La estamos reconectando…'],
+};
+function camFail(name) {
+  const [t, msg] = CAM_ERRORS[name] || ['No pudimos abrir la <em>cámara</em>', 'Lo intentamos de nuevo en unos segundos.'];
+  $('start-title').innerHTML = t; $('start-title').hidden = false;
+  setStatus(msg);
+  $('btn-cam').hidden = false; $('btn-cam').disabled = false;
+  $('start').classList.remove('hidden');
+  $('ui').classList.add('hidden');
+  clearTimeout(app.camRetry);
+  // Reintento automático (con permiso negado no hay diálogo nuevo: sólo revisa por si ya lo activaron)
+  app.camRetry = setTimeout(() => { if (app.kind !== 'camera' || !app.stream) startCamera(); }, name === 'NotAllowedError' ? 15000 : 5000);
+}
+
 async function startCamera() {
-  setStatus('Solicitando cámara…');
+  clearTimeout(app.camRetry);
   try {
     stopCamera();
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -447,17 +469,12 @@ async function startCamera() {
     video.removeAttribute('src');
     video.srcObject = stream;
     await video.play();
-    setStatus('');
+    setStatus(''); $('start-title').hidden = true; $('btn-cam').hidden = true;
     setSource(video, 'camera');
+    stream.getVideoTracks()[0]?.addEventListener('ended', () => { if (app.stream === stream) { app.stream = null; camFail('ended'); } });
   } catch (e) {
     console.error(e);
-    $('start').classList.remove('hidden');
-    $('btn-cam').disabled = false;
-    setStatus(
-      e.name === 'NotAllowedError'
-        ? 'Necesitamos permiso para usar la cámara.'
-        : `No pudimos abrir la cámara (${e.name}).`
-    );
+    camFail(e.name);
   }
 }
 
@@ -505,7 +522,7 @@ noteEl.addEventListener('input', () => { try { localStorage.setItem('vto-micas:n
 
 $('btn-cam').onclick = startCamera;
 $('file').onchange = (e) => e.target.files[0] && loadFile(e.target.files[0]);
-// ───────────────────────── Antes / después (mantener presionado; un toque lo deja 3 s)
+// ───────────────────────── Antes / después: mientras se mantiene oprimido no hay tinte; al soltar regresa
 function setBefore(v) {
   if (v && !app.before) analytics.track('before');
   app.before = v;
@@ -513,15 +530,13 @@ function setBefore(v) {
 }
 {
   const b = $('compare');
-  let downT = 0, latch = null;
-  b.addEventListener('pointerdown', (e) => { b.setPointerCapture?.(e.pointerId); downT = performance.now(); clearTimeout(latch); setBefore(true); });
-  const up = () => {
-    if (!downT) return;
-    const tap = performance.now() - downT < 280; downT = 0;
-    if (tap) latch = setTimeout(() => setBefore(false), 3000); else setBefore(false);
-  };
-  b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
-  b.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setBefore(!app.before); } });
+  const down = (e) => { e.preventDefault(); b.setPointerCapture?.(e.pointerId); setBefore(true); };
+  const up = () => setBefore(false);
+  b.addEventListener('pointerdown', down);
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, up);
+  b.addEventListener('contextmenu', (e) => e.preventDefault()); // iPad: mantener presionado no abre menú
+  b.addEventListener('keydown', (e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); setBefore(true); } });
+  b.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') setBefore(false); });
 }
 function openUsage() {
   const names = Object.fromEntries([...PRESETS.map((p) => [p.id, (p.name || p.id) + (p.photo ? '' : ' polarizada')]), ...catalog.models.map((m) => [m.id, m.name])]);
@@ -720,3 +735,4 @@ function frame() {
   // Actualización silenciosa: si subiste una versión nueva, se recarga sola cuando no hay nadie enfrente
   startUpdater(VERSION, () => !!app.idle || (app.kind === 'camera' && !app.lm && performance.now() - (app.lostSince ?? 0) > 30000));
 })();
+for (const id of ['mode-seg', 'uv']) $(id).addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); $(id).click(); } });
