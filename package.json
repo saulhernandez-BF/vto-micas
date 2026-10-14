@@ -1,8 +1,10 @@
 {
   "name": "vto-micas",
-  "version": "0.1.0",
+  "version": "0.8.1",
   "private": true,
   "type": "module",
-  "description": "Probador virtual web que detecta el armazón puesto y tiñe las micas.",
-  "scripts": { "start": "node serve.mjs" }
+  "description": "Probador virtual de micas de sol (Ben & Frank): detecta el armazón puesto y pinta las micas en tiempo real.",
+  "scripts": {
+    "start": "node serve.mjs"
+  }
 }

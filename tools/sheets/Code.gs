@@ -8,7 +8,7 @@
  */
 const VISITAS = ['recibido', 'tienda', 'dispositivo', 'version', 'fecha', 'hora', 'duracion_s', 'con_mica_s', 'colores', 'cambios',
   'exterior', 'antes', 'modelo_elegido', 'modelo_auto', 'segundos_por_color'];
-const AJUSTES = ['recibido', 'tienda', 'modelo_id', 'modelo', 'estado', 'tamano', 'altura_mm', 'reconoce', 'confunde_con', 'evidencia_med', 'evidencia_p10'];
+const AJUSTES = ['recibido', 'tienda', 'modelo_id', 'modelo', 'talla', 'estado', 'tamano', 'altura_mm', 'puente_mm', 'reconoce', 'confunde_con', 'evidencia_med', 'evidencia_p10'];
 
 function sheet_(name, head) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -32,7 +32,7 @@ function doPost(e) {
       });
       if (rows.length) { const sh = sheet_('Visitas', VISITAS); sh.getRange(sh.getLastRow() + 1, 1, rows.length, VISITAS.length).setValues(rows); }
     } else if (d.kind === 'tune') {
-      const rows = (d.models || []).slice(0, 500).map((m) => [now, store, m.id, m.name, m.status || '', m.k, m.dy,
+      const rows = (d.models || []).slice(0, 500).map((m) => [now, store, m.id, m.name, m.talla || '', m.status || '', m.k, m.dy, m.dbx || 0,
         m.recog ? (m.recog.ok ? 'sí' : 'no') : '', m.recog && !m.recog.ok ? m.recog.got : '', m.ev ? m.ev.med : '', m.ev ? m.ev.p10 : '']);
       if (rows.length) { const sh = sheet_('Ajustes', AJUSTES); sh.getRange(sh.getLastRow() + 1, 1, rows.length, AJUSTES.length).setValues(rows); }
     }

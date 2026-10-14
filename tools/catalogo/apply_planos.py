@@ -6,6 +6,11 @@ def norm(s): return re.sub(r'[^A-Z0-9]', '', unicodedata.normalize('NFKD', s).en
 P = json.load(open('planos.json'))
 path = '../../catalog/models.json'
 D = json.load(open('../../catalog/models.prev.json'))  # siempre desde el catálogo previo (idempotente)
+EX = {l.split('#')[0].strip() for l in open('excluir.txt', encoding='utf-8')} - {''}  # modelos fuera del probador
+D['models'] = [m for m in D['models'] if m['id'] not in EX]
+try:  # conservar los ajustes medidos en tienda (apply_tunes.py) al regenerar
+    KEEP = {m['id']: {k: m[k] for k in ('tune', 'tunes', 'tuneOk') if k in m} for m in json.load(open(path))['models']}
+except Exception: KEEP = {}
 byname = {}
 for fn, v in P.items():
     if v['ok']: byname.setdefault(norm(v['name']), []).append(dict(v, file=fn))
@@ -36,5 +41,6 @@ for m in D['models']:
     m['points_mm'] = base['points_mm']
     m['source'] = f"plano CAD {base['file']} (borde interior del aro)"
     n += 1
+for m in D['models']: m.update(KEEP.get(m['id'], {}))
 json.dump(D, open(path, 'w'), ensure_ascii=False, separators=(',', ':'))
 print('modelos con plano:', n, 'de', len(D['models']))

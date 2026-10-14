@@ -52,6 +52,8 @@ for m in models:
              points_mm=pts, tints=tints)
     if m in sizes: e['sizes'] = sizes[m]
     out.append(e); report.append((m, method, round(j['symmetry_iou'], 3), 'al aire' if rimless else 'aro'))
+EX = {l.split('#')[0].strip() for l in open('excluir.txt', encoding='utf-8')} - {''}  # clip-ons, De Palma…
+out = [e for e in out if e.get('id') not in EX]
 out.sort(key=lambda x: x['name'])
 json.dump({'generated': '2026-09-30', 'models': out}, open('/mnt/user-data/outputs/models.json', 'w'), separators=(',', ':'))
 print(len(out), 'modelos')

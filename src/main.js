@@ -196,7 +196,8 @@ function withSize(m, talla) {
   if (!m?.sizes?.length) return m;
   const s = m.sizes.find((x) => x.talla === talla) || m.sizes.find((x) => x.lensWidthMm === m.A) || m.sizes[0];
   const kx = s.lensWidthMm / m.A, ky = s.lensHeightMm / m.Bh;
-  return { ...m, talla: s.talla, A: s.lensWidthMm, Bh: s.lensHeightMm, dbl: s.bridgeMm, medidas: s.medidas,
+  // Ajuste fino: el de esa talla si existe; si no, el del modelo
+  return { ...m, talla: s.talla, tune: m.tunes?.[s.talla] ?? m.tune, A: s.lensWidthMm, Bh: s.lensHeightMm, dbl: s.bridgeMm, medidas: s.medidas,
     outline: m.outline.map(([x, y]) => [x * kx, y * ky]) };
 }
 function selectSize(talla) {

@@ -245,8 +245,11 @@ html.kiosk, html.kiosk body { cursor: none; overscroll-behavior: none; }
 .tune-name { flex: 1; display: flex; flex-direction: column; align-items: center; }
 .tune-name b { font: 400 26px/normal var(--display); }
 .tune-name span { font-size: 13px; opacity: .7; }
-.tune-sizes { display: flex; gap: 6px; justify-content: center; }
-.tune-row { display: grid; grid-template-columns: 70px 1fr 80px; align-items: center; gap: 12px; font-size: 15px; }
+.tune-sizes { display: flex; gap: 8px; justify-content: center; align-items: center; }
+.tune-sizes > span { font-size: 13px; opacity: .7; margin-right: 4px; }
+.tune-row { display: grid; grid-template-columns: 64px 40px 1fr 40px 84px; align-items: center; gap: 10px; font-size: 15px; }
+.tune-step { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--neutral-0); font: 500 20px/1 var(--text); display: grid; place-items: center; }
+.tune-step:active { transform: scale(.92); background: rgba(255,255,255,.15); }
 .tune-row b { font-weight: 500; text-align: right; }
 .tune-row input { width: 100%; accent-color: #fff; height: 32px; }
 .tune-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -260,3 +263,26 @@ html.tuning .picker { z-index: 40; }
 .seg-toggle:active { transform: scale(.95); }
 .seg-toggle .seg-btn { pointer-events: none; }
 .seg-toggle .seg-btn:active { transform: none; }
+
+/* ── Tamaños para iPad mini 5/6 (pantalla chica, uso con el dedo): áreas táctiles ≥ 44 px */
+.detect { gap: 12px; }
+.detect-title { font-size: 26px; letter-spacing: -0.5px; }
+.detect-label { font-size: 17px; }
+.seg { padding: 4px 6px; gap: 4px; }
+.seg-btn { padding: 10px; }
+.seg-btn img { width: 22px; height: 22px; }
+.chip { font-size: 14px; padding: 8px 14px; }
+.model-info { gap: 8px; }
+.sizes { gap: 8px; }
+.sizes .chip, .sizes .chip.solid { min-width: 40px; padding: 8px 10px; }
+.auto-chip, .detect-label.center { margin-top: -4px; }
+/* Interior / Exterior */
+.seg-text .seg-btn { padding: 10px 16px; font-size: 15px; }
+/* Antes */
+.compare { gap: 6px; margin-bottom: 24px; }
+.compare-ring { width: 56px; height: 56px; }
+.compare-ring svg { width: 24px; height: 24px; }
+.compare-lbl { font-size: 17px; }
+/* Chip del modelo y tallas: un poco más grandes para el dedo */
+.model-info .chip, .auto-chip { font-size: 16px; padding: 10px 18px; }
+.sizes .chip, .sizes .chip.solid { min-width: 48px; padding: 10px 12px; font-size: 16px; }

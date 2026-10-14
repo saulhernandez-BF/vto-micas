@@ -1,0 +1,4 @@
+# Modelos fuera del probador (un id por línea). Se quitan del catálogo y los scripts los ignoran.
+maria-clip-on     # clip-on: no entran en este proyecto
+molina-clip-on    # clip-on
+de-palma          # no se puede poner en ningún color

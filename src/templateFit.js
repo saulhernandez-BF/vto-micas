@@ -162,11 +162,13 @@ export class TemplateFitter {
     if (!this.mmPerS) return null;
     const w = cfg.detect.lensPlane, inset = cfg.lens.insetPx / B.s;
     // Ajuste fino por modelo (medido en tienda): escala alrededor del centro de la mica y desplazamiento vertical en mm
-    const t = model.tune || {}, ts = t.k || 1, dyL = ((t.dy || 0) * this.best.k) / this.mmPerS;
+    // dbx = separación extra entre micas (puente), en mm: cada mica se mueve la mitad hacia afuera
+    const t = model.tune || {}, ts = t.k || 1, mmL = this.best.k / this.mmPerS, dyL = (t.dy || 0) * mmL, dxL = ((t.dbx || 0) / 2) * mmL;
     return this.local(model, this.best.cy, this.best.k).map((L) => {
       L.cv += dyL;
+      const cu0 = L.cu; L.cu += L.side * dxL;
       const pts = L.pts.map(([u, v]) => {
-        const du = (u - L.cu) * ts, dv = (v + dyL - L.cv) * ts, r = Math.hypot(du, dv) || 1, f = Math.max(0, r - inset) / r;
+        const du = (u - cu0) * ts, dv = (v + dyL - L.cv) * ts, r = Math.hypot(du, dv) || 1, f = Math.max(0, r - inset) / r;
         return lensPt(B, L.cu + du * f, L.cv + dv * f);
       });
       L.hu *= ts; L.hv *= ts;
