@@ -286,3 +286,10 @@ html.tuning .picker { z-index: 40; }
 /* Chip del modelo y tallas: un poco más grandes para el dedo */
 .model-info .chip, .auto-chip { font-size: 16px; padding: 10px 18px; }
 .sizes .chip, .sizes .chip.solid { min-width: 48px; padding: 10px 12px; font-size: 16px; }
+
+/* Tablet en horizontal */
+.rotate { z-index: 60; }
+.rotate-icon { display: block; color: var(--neutral-0); animation: tilt 2.4s var(--ease) infinite; }
+@keyframes tilt { 0%, 30% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0deg); } }
+
+.perf { white-space: pre; }

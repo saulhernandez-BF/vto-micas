@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VTO Micas · Benchmark</title>
+<style>
+  body { margin: 0; background: #202020; color: #fff; font: 15px/1.4 -apple-system, system-ui, sans-serif; padding: 24px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p { margin: 0 0 14px; opacity: .8; }
+  button { font: inherit; padding: 12px 22px; border-radius: 30px; border: 2px solid #fff; background: none; color: #fff; }
+  pre { background: #111; padding: 16px; border-radius: 12px; white-space: pre-wrap; font: 13px/1.5 ui-monospace, Menlo, monospace; }
+  video { width: 160px; border-radius: 8px; display: block; margin: 12px 0; transform: scaleX(-1); }
+</style>
+</head>
+<body>
+<h1>Benchmark del probador</h1>
+<p>Mide cuánto tarda cada parte con la cámara de este equipo. Ponte frente a la cámara (una sola persona) y toca Iniciar. Tarda ~1 min; manda captura del resultado.</p>
+<button id="go">Iniciar</button>
+<video id="v" playsinline muted></video>
+<pre id="out">—</pre>
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
+const MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+const out = document.getElementById('out'), v = document.getElementById('v');
+const log = (s) => { out.textContent += s + '\n'; };
+const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
+const nextFrame = () => new Promise((r) => (v.requestVideoFrameCallback ? v.requestVideoFrameCallback(() => r()) : requestAnimationFrame(() => r())));
+
+async function camera(px) {
+  v.srcObject?.getTracks().forEach((t) => t.stop());
+  const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: px }, height: { ideal: px }, frameRate: { ideal: 30 } }, audio: false });
+  v.srcObject = s; await v.play(); await new Promise((r) => setTimeout(r, 800));
+  return `${v.videoWidth}×${v.videoHeight}`;
+}
+
+async function benchTrack(fileset, numFaces, delegate, frames = 90) {
+  const lm = await FaceLandmarker.createFromOptions(fileset, { baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: 'VIDEO', numFaces });
+  const t = []; let found = 0, ts = 0;
+  for (let i = 0; i < frames + 15; i++) {
+    await nextFrame();
+    const t0 = performance.now();
+    const r = lm.detectForVideo(v, (ts = Math.max(performance.now(), ts + 1)));
+    const dt = performance.now() - t0;
+    if (i >= 15) { t.push(dt); if (r.faceLandmarks?.length) found++; }
+  }
+  lm.close();
+  return `${med(t).toFixed(1)} ms (cara en ${Math.round((100 * found) / frames)} %)`;
+}
+
+function benchRead(frames = 60) {
+  // Lo que hace la detección de aro / luz / reflejos: copiar un recorte del video a un canvas de CPU y leerlo
+  const c = document.createElement('canvas'); c.width = 360; c.height = 200;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  const t = [];
+  for (let i = 0; i < frames; i++) {
+    const t0 = performance.now();
+    x.drawImage(v, v.videoWidth * 0.25, v.videoHeight * 0.35, v.videoWidth * 0.5, v.videoHeight * 0.2, 0, 0, 360, 200);
+    x.getImageData(0, 0, 360, 200);
+    t.push(performance.now() - t0);
+  }
+  return `${med(t).toFixed(1)} ms`;
+}
+
+document.getElementById('go').onclick = async () => {
+  out.textContent = '';
+  log(navigator.userAgent);
+  try {
+    const fileset = await FilesetResolver.forVisionTasks(WASM);
+    for (const px of [1920, 1280, 720]) {
+      const res = await camera(px);
+      log(`\nCámara pedida ${px} → ${res}`);
+      log(`  rostro GPU, 1 cara : ${await benchTrack(fileset, 1, 'GPU')}`);
+      log(`  rostro GPU, 3 caras: ${await benchTrack(fileset, 3, 'GPU')}`);
+      log(`  leer recorte (aro) : ${benchRead()}`);
+    }
+    log('\nListo.');
+  } catch (e) { log('Error: ' + e.message); }
+  v.srcObject?.getTracks().forEach((t) => t.stop());
+};
+</script>
+</body>
+</html>

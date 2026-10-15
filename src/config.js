@@ -1,5 +1,5 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
-export const VERSION = '0.8.6';
+export const VERSION = '0.9.4';
 // Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
 export const REMOTE_URL = 'https://script.google.com/macros/s/AKfycbyPvqpy4w7FGJdoeyv9uiuFAWJc5VqALXZBugLimZMUqeIU2FZ81lEhLA3s1xzhMQ4/exec';
 
@@ -56,6 +56,7 @@ export const DEFAULTS = {
     polarity: 'dark',
     rays: 64,
     samples: 32,
+    hqAuto: true, hqRays: 96, hqSamples: 44, // equipos sobrados (iPad A17 Pro): contorno más fino
     kernel: 2,
     rMin: 0.65,
     rMax: 1.85,          // micas grandes (p. ej. Parks G) rebasan la forma base
@@ -82,8 +83,8 @@ export const DEFAULTS = {
     wrapDeg: 13.5,           // curvatura del frente hacia la sien
     procWidth: 360,
     renderWithoutGlasses: false, // sin lentes detectados no se pinta mica
-    frameOn: 1.05,       // evidencia de armazón (puente/varillas, normalizada) para decir "trae lentes"
-    frameOff: 0.85,
+    frameOn: 3.5,         // evidencia de armazón (puente/varillas). Medido en vivo (cámara Mac, 15-oct): sin lentes ≈1.1–1.4, con lentes 15–20
+    frameOff: 2.5,
     lock: false,
   },
   // Forma base en unidades locales (1 = distancia entre comisuras externas ≈ 9 cm)
@@ -93,7 +94,7 @@ export const DEFAULTS = {
     // Reconocimiento automático del modelo (modo Auto): evaluaciones mínimas, error máximo y ventaja sobre el 2º
     autoRecognize: true, autoMinEvals: 6, autoMaxScore: 0.15, autoMargin: 0.02, autoMinConf: 0.35,
     turnCalib: true, turnMinYaw: 15, turnMaxYaw: 50, turnFrames: 60, turnPrior: 1 },
-  guide: { enabled: true, minRel: 0.12, maxRel: 0.4, centerTol: 0.15, delaySec: 0.8, idleSec: 6 },
+  guide: { enabled: true, minRel: 0.12, maxRel: 0.4, centerTol: 0.15, delaySec: 0.8, idleSec: 6, idleTrackHz: 5 },
   prior: { cx: 0.37, cy: 0.0, a: 0.27, b: 0.2, n: 2.6 },
   tracking: { minCutoff: 1.5, beta: 0.8, dCutoff: 1.0 },
   view: { mirror: true, showTint: true },
@@ -126,7 +127,7 @@ export const PRESETS = [
   { id: 'miramar', group: 'Fotoentintadas', name: 'Miramar', color: '#9e9cc2', swatch: '#AA86D9', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
 ];
 
-const KEY = 'vto-micas:config:v10';
+const KEY = 'vto-micas:config:v12';
 
 export function merge(base, over) {
   if (!over || typeof over !== 'object') return base;

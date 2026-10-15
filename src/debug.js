@@ -115,6 +115,8 @@ export class Debug {
     fd.add(c.detect, 'spatialSmooth', 0, 1, 0.01).name('Suavizado contorno');
     fd.add(c.detect, 'symmetry', 0, 1, 0.01).name('Simetría L/R');
     fd.add(c.detect, 'glassesThreshold', 0, 1, 0.01).name('Umbral “hay lentes”');
+    fd.add(c.detect, 'frameOn', 0.5, 12, 0.1).name('Armazón: prende (puente/varillas)');
+    fd.add(c.detect, 'frameOff', 0.5, 12, 0.1).name('Armazón: apaga');
     fd.add(c.detect, 'rimContrast', 0.03, 0.5, 0.005).name('Contraste mín. aro');
     fd.add(c.detect, 'autoPolarity').name('Auto: probar aro fino');
     fd.add(c.detect, 'rimContrastLine', 0.02, 0.3, 0.005).name('Contraste mín. aro fino');

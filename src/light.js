@@ -1,5 +1,6 @@
 // Estimación de luz ambiental a partir del frame completo + sondas sobre la piel.
 import { clamp, smoothstep } from './math.js';
+import { frameCache } from './frameCache.js';
 
 const PROBES = { forehead: 151, cheekR: 205, cheekL: 425, chin: 199, nose: 4 };
 
@@ -15,12 +16,15 @@ export class LightEstimator {
   }
 
   update(src, W, H, lm, dt, cfg) {
-    const w = 128, h = Math.max(1, Math.round((128 * H) / W));
+    // Zona de la cara (ya copiada a CPU para la detección): evita otra espera a la GPU por cuadro
+    const R = frameCache.want && src === frameCache.src ? frameCache.want : { x: 0, y: 0, w: W, h: H };
+    const w = 128, h = Math.max(1, Math.round((128 * R.h) / R.w));
     if (this.canvas.width !== w || this.canvas.height !== h) {
       this.canvas.width = w; this.canvas.height = h;
     }
-    this.ctx.drawImage(src, 0, 0, w, h);
+    frameCache.draw(this.ctx, src, R.x, R.y, R.w, R.h, 0, 0, w, h);
     const d = this.ctx.getImageData(0, 0, w, h).data;
+    const ox = R.x, oy = R.y; W = R.w; H = R.h;
 
     let r = 0, g = 0, b = 0, c = 0;
     for (let i = 0; i < d.length; i += 8) { r += d[i]; g += d[i + 1]; b += d[i + 2]; c++; }
@@ -30,7 +34,7 @@ export class LightEstimator {
     const probes = {};
     for (const [k, idx] of Object.entries(PROBES)) {
       const p = lm[idx];
-      const px = Math.round((p[0] * w) / W), py = Math.round((p[1] * h) / H);
+      const px = Math.round(((p[0] - ox) * w) / W), py = Math.round(((p[1] - oy) * h) / H);
       let s = 0, n = 0;
       for (let y = py - 1; y <= py + 1; y++) for (let x = px - 1; x <= px + 1; x++) {
         if (x < 0 || y < 0 || x >= w || y >= h) continue;

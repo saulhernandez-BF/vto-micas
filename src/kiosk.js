@@ -33,7 +33,6 @@ export class Kiosk {
     addEventListener('contextmenu', (e) => e.preventDefault());
     for (const ev of ['gesturestart', 'gesturechange']) addEventListener(ev, (e) => e.preventDefault());
     addEventListener('touchmove', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('[kiosk] sw', e));
     setInterval(() => this.watchdog(), 1000);
     setInterval(() => this.nightly(), 60000);
   }

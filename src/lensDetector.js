@@ -7,6 +7,7 @@
 import { toImg, lensPt, clamp, median, smoothstep, sub, dot } from './math.js';
 import { ShapeFitter } from './shapeFit.js';
 import { TemplateFitter } from './templateFit.js';
+import { frameCache } from './frameCache.js';
 
 const TAU = Math.PI * 2;
 
@@ -131,7 +132,7 @@ export class LensDetector {
     const ph = Math.max(8, Math.round((pw * rh) / rw));
     if (this.canvas.width !== pw || this.canvas.height !== ph) { this.canvas.width = pw; this.canvas.height = ph; }
     this.pw = pw; this.ph = ph; this.sc = pw / rw;
-    this.ctx.drawImage(src, x0, y0, rw, rh, 0, 0, pw, ph);
+    frameCache.draw(this.ctx, src, x0, y0, rw, rh, 0, 0, pw, ph);
     const img = this.ctx.getImageData(0, 0, pw, ph).data;
     if (!this.gray || this.gray.length !== pw * ph) this.gray = new Float32Array(pw * ph);
     for (let i = 0, j = 0; i < this.gray.length; i++, j += 4)

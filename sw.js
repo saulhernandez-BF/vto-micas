@@ -1,11 +1,14 @@
-// Service worker del modo kiosko: la app funciona aunque se caiga el Wi-Fi de la tienda.
+// Service worker (todas las tablets): versiones siempre frescas y la app funciona aunque se caiga el Wi-Fi.
 //  · Archivos propios: red primero (para recibir versiones nuevas), caché si no hay red.
 //  · MediaPipe (jsdelivr) y el modelo de rostro (storage.googleapis): caché primero, son versiones fijas.
-const CACHE = 'vto-micas-v1';
+const CACHE = 'vto-micas-v2';
 const PINNED = /cdn\.jsdelivr\.net\/npm\/@mediapipe|storage\.googleapis\.com\/mediapipe-models/;
 
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener('activate', (e) => e.waitUntil((async () => {
+  for (const k of await caches.keys()) if (k !== CACHE) await caches.delete(k); // limpia cachés de versiones anteriores
+  await self.clients.claim();
+})()));
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;

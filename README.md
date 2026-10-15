@@ -95,16 +95,32 @@ Hay una sola página. Todo lo demás son parámetros que se agregan al link y se
 
 ## 3. Poner una tablet nueva
 
-1. Abrir en Safari / Chrome:
-   `https://saulhernandez-bf.github.io/vto-micas/?tienda=NOMBRE-DE-TIENDA&kiosk`
-   (nombre en minúsculas y sin espacios, por ejemplo `polanco`, `condesa`, `guadalajara-andares`).
-2. Permitir la cámara cuando lo pida.
-3. (iPad) Compartir → "Agregar a pantalla de inicio" para abrirla como app, y activar **Acceso guiado** (Ajustes → Accesibilidad) para que no se pueda salir.
-4. Dejarla conectada a la corriente, en vertical.
+Tablets de tienda: **iPad mini (A17 Pro), iPadOS 26**, en vertical. Configurar una sola vez:
 
-La tienda y el modo kiosko se guardan en la tablet; las siguientes veces basta abrir el link normal. Para revisar que quedó bien: abrir `?reporte` y ver que diga la tienda correcta.
+**En Ajustes del iPad**
+1. **Pantalla y brillo → Bloqueo automático: Nunca.**
+2. **Batería → Modo de bajo consumo: apagado** (frena la animación y la cámara).
+3. **Ajustes → Apps → Safari → Cámara: Permitir** (para que no pregunte en cada visita).
+4. **Accesibilidad → Acceso guiado: activado** (con código), para que el cliente no pueda salir de la app.
 
----
+**En la app**
+5. Abrir en Safari: `https://saulhernandez-bf.github.io/vto-micas/?tienda=NOMBRE-DE-TIENDA&kiosk`
+   (nombre en minúsculas y sin espacios: `polanco`, `condesa`, `guadalajara-andares`…). Permitir la cámara.
+6. Compartir → **Agregar a pantalla de inicio**. En iPadOS 26 se abre como app (sin barra de Safari). Abrirla desde ese ícono.
+7. Con la app abierta, en el Centro de control:
+   - **Bloqueo de rotación: activado**, con la tablet en vertical. Una página web no puede bloquear la rotación; si la giran, la app muestra "Gira la tablet".
+   - **Center Stage: apagado** (el ícono de la cámara aparece en el Centro de control mientras la cámara está en uso). La app tolera el zoom automático, pero sin él la imagen es más nítida y estable.
+8. Triple clic en el botón superior para iniciar **Acceso guiado**.
+9. Dejarla conectada a la corriente.
+
+Para revisar: `?reporte` debe mostrar la tienda correcta, y `?perf` la versión y "(HQ)" (equipo con calidad alta).
+
+**Qué hace la app para este iPad**
+- Pide la cámara en **1080p** para que se vea nítida en la pantalla de 2266 × 1488. Si un equipo no da, baja sola a 1280 y luego a 720.
+- **Modo HQ:** si a los 3 s el equipo va sobrado (menos de 24 ms por cuadro), usa 96 rayos y 44 muestras (en vez de 64/32) para un contorno más fino. Si después se satura, regresa a lo normal.
+- Trabaja exactamente cuando llega cada cuadro de cámara (`requestVideoFrameCallback`), con menos retraso.
+- **En la pantalla de espera** busca caras sólo 5 veces por segundo, para que no se caliente en jornadas largas; con alguien enfrente, vuelve a velocidad completa.
+- Si la escala de la cara salta de golpe (zoom de Center Stage), reinicia el suavizado para que la mica no se quede atrás.
 
 ## 4. Publicar cambios
 
@@ -115,7 +131,7 @@ git add -A && git commit -m "descripción del cambio" && git push pages HEAD:mai
 
 - GitHub Pages tarda 1–2 minutos en publicar.
 - **Las tablets se actualizan solas:** cada 10 minutos revisan `VERSION` en `src/config.js` y, si cambió, se recargan en cuanto nadie la está usando. Por eso **cada cambio debe subir `VERSION`** (y el `?v=` de `index.html` para el CSS y el JS principal).
-- Para ver el cambio en tu compu al instante, usa una pestaña privada (el navegador guarda caché).
+- Un service worker (`sw.js`, activo en todas las tablets) revalida cada archivo contra el servidor en cada carga, así que después de la primera visita nunca se mezclan módulos viejos con nuevos. La **primera vez** que un navegador abre la versión con service worker puede tardar hasta 10 min en ver todo nuevo (caché de GitHub Pages): recargar con Cmd+Shift+R o usar pestaña privada.
 - Para confirmar qué versión tiene una tablet, abre el link con `?perf`.
 - **Nunca subir** `certs/` (llave privada del HTTPS local), `media/` (fotos de prueba, sólo para QA interno) ni los PDFs de los planos. Ya están en `.gitignore`.
 
@@ -296,7 +312,7 @@ Se activa con `?kiosk` (se recuerda en la tablet). Archivos: `src/kiosk.js` y `s
 - **Pantalla siempre encendida** (Wake Lock).
 - **Pantalla completa** al primer toque.
 - Sin menú al mantener presionado, sin zoom con pellizco, sin cursor.
-- **Funciona sin Wi-Fi:** un service worker guarda la app, MediaPipe y el modelo de cara. Los archivos de la app siempre se revisan contra el servidor, así que no se queda con versiones viejas.
+- **Funciona sin Wi-Fi:** el service worker (activo en todas las tablets, no sólo en kiosko) guarda la app, MediaPipe y el modelo de cara. Los archivos de la app siempre se revisan contra el servidor, así que no se queda con versiones viejas.
 - **Vigilante de cámara:** si no llega un cuadro nuevo en 3 s, reabre la cámara.
 - **Recarga nocturna** a las 4 a. m. si nadie la está usando.
 
@@ -401,7 +417,7 @@ certs/                Certificado HTTPS local (ignorado por git, NUNCA subir)
 | `REMOTE_URL` | URL del buzón de la hoja central (vacío = sólo local). |
 | `KEY` (`vto-micas:config:vN`) | Llave de guardado en el navegador. Subir `N` cuando cambian valores por defecto, para que las tablets no usen la config vieja guardada. |
 | `lens.*` | Mica activa, densidad, degradado, `polGlare` (reflejos en polarizadas), tiempos de fotoentintado. |
-| `detect.*` | Detección de aro: rayos, contraste, umbrales `frameOn` / `frameOff` de evidencia de armazón. |
+| `detect.*` | Detección de aro: rayos, contraste, umbrales `frameOn` 3.5 / `frameOff` 2.5 de evidencia de armazón (medido en vivo: sin lentes ≈1.1–1.4, con lentes 15–20). |
 | `catalog.*` | `irisMm`, `scaleAdj` (escala global de la mica), calibración, `lostResetSec`, reconocimiento automático (`autoRecognize`, `autoMinEvals`, `autoMaxScore`, `autoMargin`, `autoMinConf`). |
 | `guide.*` | Guía de encuadre (`minRel` / `maxRel` = qué tan lejos / cerca, `centerTol`) e `idleSec` (segundos sin nadie para la pantalla de espera). |
 | `light.*` | Reflejos reales y sintéticos, brillo. |

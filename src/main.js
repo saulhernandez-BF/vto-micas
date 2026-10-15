@@ -7,6 +7,7 @@ import { Debug } from './debug.js';
 import { loadConfig, saveConfig, resetConfig, merge, applyPreset, PRESETS, PHOTO_TARGETS, VERSION } from './config.js';
 import { hexToRgb } from './math.js';
 import { loadCatalog } from './catalog.js';
+import { frameCache } from './frameCache.js';
 import { AutoMatcher } from './autoMatch.js';
 import { Analytics, openReport } from './analytics.js';
 import { Kiosk, startUpdater } from './kiosk.js';
@@ -14,6 +15,7 @@ import { Tuner, applyTunes } from './tune.js';
 
 const $ = (id) => document.getElementById(id);
 const cfg = loadConfig();
+const DEFAULTS_DETECT = { rays: 64, samples: 32 }; // valores base (modo normal y ligero)
 const canvas = $('view');
 const ctx = canvas.getContext('2d');
 const video = $('video');
@@ -458,12 +460,23 @@ function camFail(name) {
   app.camRetry = setTimeout(() => { if (app.kind !== 'camera' || !app.stream) startCamera(); }, name === 'NotAllowedError' ? 15000 : 5000);
 }
 
+const CAM_TIERS = [1920, 1280, 720]; // si el equipo no da, se baja de escalón (ver frame())
+// Avisa cada cuadro nuevo de cámara (Safari/Chrome): trabajamos justo al llegar, sin preguntar en cada refresco
+function armVideoFrames(stream) {
+  if (!video.requestVideoFrameCallback) return;
+  app.vfc = true;
+  const tick = () => { if (app.stream !== stream) return; app.newVideoFrame = true; video.requestVideoFrameCallback(tick); };
+  video.requestVideoFrameCallback(tick);
+}
+
 async function startCamera() {
   clearTimeout(app.camRetry);
+  app.camTier = 0; app.liteSince = null;
   try {
     stopCamera();
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: app.facing, width: { ideal: 1280 }, height: { ideal: 1280 }, aspectRatio: { ideal: innerWidth / innerHeight }, frameRate: { ideal: 30 } },
+      // 1080p: la pantalla del iPad mini (2266 × 1488) se ve nítida; el análisis trabaja sobre recortes chicos
+      video: { facingMode: app.facing, width: { ideal: CAM_TIERS[0] }, height: { ideal: CAM_TIERS[0] }, aspectRatio: { ideal: innerWidth / innerHeight }, frameRate: { ideal: 30 } },
       audio: false,
     });
     app.stream = stream;
@@ -472,6 +485,7 @@ async function startCamera() {
     await video.play();
     setStatus(''); $('start-title').hidden = true; $('btn-cam').hidden = true;
     setSource(video, 'camera');
+    armVideoFrames(stream);
     stream.getVideoTracks()[0]?.addEventListener('ended', () => { if (app.stream === stream) { app.stream = null; camFail('ended'); } });
   } catch (e) {
     console.error(e);
@@ -595,7 +609,9 @@ function frame() {
   // En foto reintentamos hasta encontrar rostro (el tracker en modo VIDEO puede fallar el primer intento)
   // Video: sólo trabajamos cuando la cámara entrega un cuadro nuevo (la pantalla refresca a 60-120 Hz, la cámara a ~30)
   if (app.kind !== 'image' && !app.paused) {
-    if (video.currentTime === app.lastFrameT && !app.dirty) return;
+    const fresh = app.vfc && app.kind === 'camera' ? app.newVideoFrame : video.currentTime !== app.lastFrameT;
+    if (!fresh && !app.dirty) return;
+    app.newVideoFrame = false;
     app.lastFrameT = video.currentTime;
   }
   app.dirty = false;
@@ -609,22 +625,37 @@ function frame() {
   // Cámara a ~30 fps ⇒ 33 ms por cuadro. Si rostro + aro + dibujo no caben, modo ligero (con histéresis).
   const work = app.ms.track + (app.ms.detectFull || 0) + app.ms.render;
   if (work > 30) app.lite = true; else if (work < 20) app.lite = false;
-  // Calidad de cámara: empezamos en alta (~1280 px). Si tras 4 s el equipo sigue en modo ligero, bajamos a 720.
-  if (app.kind === 'camera' && app.lite && Math.max(app.W, app.H) > 900) {
+  // Calidad de cámara: empezamos en 1080p. Si tras 4 s el equipo sigue en modo ligero, bajamos un escalón (1280 → 720).
+  if (app.kind === 'camera' && app.lite && (app.camTier ?? 0) < CAM_TIERS.length - 1) {
     app.liteSince ??= now;
-    if (now - app.liteSince > 4000 && !app.downscaled) {
-      app.downscaled = true;
-      app.stream?.getVideoTracks()[0]?.applyConstraints({ width: { ideal: 720 }, height: { ideal: 720 } }).catch(() => {});
+    if (now - app.liteSince > 4000) {
+      app.camTier = (app.camTier ?? 0) + 1; app.liteSince = null;
+      const px = CAM_TIERS[app.camTier];
+      app.stream?.getVideoTracks()[0]?.applyConstraints({ width: { ideal: px }, height: { ideal: px } }).catch(() => {});
     }
   } else app.liteSince = null;
-  const trackTurn = !app.lite || app.frameN % 3 !== 0 || !app.lm; // ligero: 2 de cada 3 cuadros rostro, 1 de 3 aro
+  // Equipo sobrado (iPad A17 Pro): más rayos y muestras → contorno más fino. Se decide una vez, tras 3 s de cámara.
+  if (app.kind === 'camera' && app.hq === undefined && app.frameN > 90) {
+    app.hq = !app.lite && work < 24 && cfg.detect.hqAuto; // la lectura de cámara (~8 ms) ya va incluida
+    if (app.hq) { cfg.detect.rays = cfg.detect.hqRays; cfg.detect.samples = cfg.detect.hqSamples; }
+  }
+  if (app.hq && app.lite) { app.hq = false; cfg.detect.rays = DEFAULTS_DETECT.rays; cfg.detect.samples = DEFAULTS_DETECT.samples; }
+  let trackTurn = !app.lite || app.frameN % 3 !== 0 || !app.lm; // ligero: 2 de cada 3 cuadros rostro, 1 de 3 aro
+  // Pantalla de espera: buscar caras sólo ~5 veces por segundo (la tablet no se calienta en jornadas largas)
+  if (app.idle && !app.lm) { trackTurn = now - (app.idleTrackT || 0) >= 1000 / cfg.guide.idleTrackHz; if (trackTurn) app.idleTrackT = now; }
   if (!app.paused && isNew && trackTurn && tracker.landmarker) {
     app.tries++;
     const t0 = performance.now();
     const lm = tracker.detect(src, W, H, now);
     app.cnt = app.cnt || { t: 0, d: 0, r: 0 }; app.cnt.t++;
     app.ms.track = performance.now() - t0;
-    if (lm) { app.lm = lm; app.noFace = 0; app.B = basis.update(lm, now / 1000); }
+    if (lm) {
+      // Salto brusco de escala (zoom de Center Stage o cambio de cámara): reiniciar el filtro para no arrastrar la mica
+      const sRaw = Math.hypot(lm[33][0] - lm[263][0], lm[33][1] - lm[263][1]);
+      if (app.sRaw && Math.abs(sRaw / app.sRaw - 1) > 0.18) basis.reset();
+      app.sRaw = sRaw;
+      app.lm = lm; app.noFace = 0; app.B = basis.update(lm, now / 1000);
+    }
     else if (app.kind !== 'image' && ++app.noFace > 6) { app.lm = null; app.B = null; basis.reset(); }
     if (!lm && app.kind === 'camera') {
       app.lostSince ??= now;
@@ -637,7 +668,8 @@ function frame() {
     } else app.lostSince = null;
   }
 
-  // Luz + detección de aro
+  // Luz + detección de aro (leen la zona de la cara copiada UNA vez a CPU)
+  frameCache.begin(src, W, H, app.lm);
   const t1 = performance.now();
   if (app.B && app.lm) {
     detector.updateGeo(app.B, app.lm, cfg, wdt);
@@ -689,14 +721,26 @@ function frame() {
   updateHint();
   if (PERF && now - (app.perfT || 0) > 1000) {
     const c = app.cnt || { t: 0, d: 0, r: 0 }, sec = (now - (app.perfT || now)) / 1000 || 1;
-    app.rates = `cámara ${(c.r / sec).toFixed(0)} · rostro ${(c.t / sec).toFixed(0)} · aro ${(c.d / sec).toFixed(0)} /s`;
+    const rd = frameCache.reads - (app.readsT || 0); app.readsT = frameCache.reads;
+    app.rates = `cámara ${(c.r / sec).toFixed(0)} · rostro ${(c.t / sec).toFixed(0)} · aro ${(c.d / sec).toFixed(0)} · lecturas ${(rd / sec).toFixed(0)} /s`;
     app.cnt = { t: 0, d: 0, r: 0 };
     app.perfT = now;
-    PERF.textContent = `v${VERSION} · ${app.rates || ''}${app.lite ? ' (ligero)' : ''} · ${app.W}×${app.H} · track ${app.ms.track.toFixed(1)} · detect ${app.ms.detect.toFixed(1)} · render ${app.ms.render.toFixed(1)} ms · ${tracker.delegate || ''}`;
+    PERF.textContent = `v${VERSION} · ${app.rates || ''}${app.lite ? ' (ligero)' : ''}${app.hq ? ' (HQ)' : ''}${app.idle ? ' (espera)' : ''} · ${app.W}×${app.H} · track ${app.ms.track.toFixed(1)} · detect ${app.ms.detect.toFixed(1)} · render ${app.ms.render.toFixed(1)} ms · ${tracker.delegate || ''}`
+      + (detector.bridgeRaw ? `\narmazón ${(detector.bridge || 0).toFixed(2)}${detector.bridgeOn ? ' ✓' : ''} (puente ${detector.bridgeRaw.bScore.toFixed(2)} · sienes ${detector.bridgeRaw.temple.toFixed(2)}; prende ${cfg.detect.frameOn}) · aro ${detector.glassesScore.toFixed(2)}${detector.detected ? ' ✓' : ''} · tinte ${(app.tintA || 0).toFixed(2)}` : '');
   }
 }
 
 // ───────────────────────── Arranque (kiosko: la cámara abre sola)
+// Service worker en todas las tablets: revalida cada archivo de la app contra el servidor en cada carga
+// (evita mezclar módulos viejos del caché del navegador con los nuevos tras publicar) y permite
+// funcionar sin Wi-Fi.
+// Tablet en horizontal (sólo pantallas táctiles; en computadora no aplica)
+{
+  const mq = matchMedia('(pointer: coarse) and (orientation: landscape)');
+  const upd = () => { app.landscape = mq.matches; $('rotate').classList.toggle('hidden', !mq.matches); };
+  mq.addEventListener?.('change', upd); upd();
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('[VTO] sw', e));
 (async () => {
   cfg.lens.outdoor = false; // cada arranque empieza en interior
   if (new URLSearchParams(location.search).has('debug')) cfg.debug.panel = true;

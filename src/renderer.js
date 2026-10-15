@@ -1,5 +1,6 @@
 // Capa 2 · Render: tinte físico (multiply = transmitancia), reflejo ambiental, espejo y brillo especular.
 import { hexToRgb, rgbStr, clamp, lerp, norm2 } from './math.js';
+import { frameCache } from './frameCache.js';
 
 export function smoothPath(pts) {
   const p = new Path2D(), n = pts.length;
@@ -33,7 +34,7 @@ export class Renderer {
   // Reflejos reales sin leer el canvas principal (leerlo frena la GPU, sobre todo en iPad/Safari):
   // en un canvas pequeño de CPU calculamos "original × alfa(brillo)", lo recortamos con la máscara
   // y lo pintamos encima del tinte. Equivale a D += (O − D)·h, a ~½–⅓ de resolución (los reflejos son suaves).
-  restoreReflections(ctx, src, rx, ry, rw, rh, Li) {
+  restoreReflections(ctx, src, rx, ry, rw, rh, Li, paths) {
     const sc = Math.min(1, (Li.keepRes || 200) / Math.max(rw, rh));
     const kw = Math.max(2, Math.round(rw * sc)), kh = Math.max(2, Math.round(rh * sc));
     this.keep ??= document.createElement('canvas');
@@ -41,7 +42,7 @@ export class Renderer {
     if (kc.width !== kw || kc.height !== kh) { kc.width = kw; kc.height = kh; this.keepCtx = null; }
     const k = (this.keepCtx ??= kc.getContext('2d', { willReadFrequently: true }));
     k.globalCompositeOperation = 'source-over';
-    k.drawImage(src, rx, ry, rw, rh, 0, 0, kw, kh);
+    frameCache.draw(k, src, rx, ry, rw, rh, 0, 0, kw, kh);
     const img = k.getImageData(0, 0, kw, kh), D = img.data;
     const t0 = Li.keepThreshold, t1 = Math.min(1, t0 + Li.keepSoftness), ks = Li.keepStrength * 255;
     const inv = 1 / Math.max(1e-3, t1 - t0);
@@ -52,8 +53,12 @@ export class Renderer {
       D[i + 3] = h * ks;
     }
     k.putImageData(img, 0, 0);
+    // Recorte con la forma de las micas dibujada aquí mismo (copiar la máscara de la GPU obligaría a esperarla)
     k.globalCompositeOperation = 'destination-in';
-    k.drawImage(this.mask, 0, 0, rw, rh, 0, 0, kw, kh);
+    k.setTransform(kw / rw, 0, 0, kh / rh, (-rx * kw) / rw, (-ry * kh) / rh);
+    const all = new Path2D(); for (const p of paths) all.addPath(p);
+    k.fillStyle = '#fff'; k.fill(all);
+    k.setTransform(1, 0, 0, 1, 0, 0);
     k.globalCompositeOperation = 'source-over';
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(kc, 0, 0, kw, kh, rx, ry, rw, rh);
@@ -192,7 +197,7 @@ export class Renderer {
     // (no pasa a través del tinte), así que devolvemos las zonas brillantes del original.
     if (Li.keepReal && Li.keepStrength > 0) {
       // En modo ligero recalculamos los reflejos cada 2 cuadros y reusamos el último (se mueve con la mica)
-      if (!st.lite || st.frameN % 2 === 0 || !this.keep) this.restoreReflections(ctx, src, rx, ry, rw, rh, Li);
+      if (!st.lite || st.frameN % 2 === 0 || !this.keep) this.restoreReflections(ctx, src, rx, ry, rw, rh, Li, paths);
       else ctx.drawImage(this.keep, 0, 0, this.keep.width, this.keep.height, rx, ry, rw, rh);
     }
 
