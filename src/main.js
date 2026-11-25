@@ -173,7 +173,7 @@ function renderSwatches() {
       if (!host) continue;
       const b = document.createElement('button');
       b.className = 'swatch'; b.dataset.id = p.id; b.setAttribute('role', 'radio');
-      const c2 = p.photo === 'cafe' ? '#6C5F4C' : p.photo === 'gris' ? '#545A5C' : '';
+      const c2 = p.photo === 'cafe' ? '#A7716A' : p.photo === 'gris' ? '#64686C' : ''; // mitad "activada" del círculo
       if (p.photo) b.dataset.photo = p.photo;
       b.innerHTML = `<span class="dot" style="--c:${p.swatch || p.color};${c2 ? '--c2:' + c2 : ''}"></span><span class="lbl">${p.name}</span>`;
       b.onclick = () => { applyPreset(cfg, p); analytics.track('preset', { id: p.id }); debug.refresh(); onConfigChange(); };

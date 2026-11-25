@@ -1,6 +1,6 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
 import { PAIS } from './pais.js';
-export const VERSION = '0.9.18';
+export const VERSION = '0.9.19';
 // Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
 export const REMOTE_URL = 'https://script.google.com/macros/s/AKfycbyPvqpy4w7FGJdoeyv9uiuFAWJc5VqALXZBugLimZMUqeIU2FZ81lEhLA3s1xzhMQ4/exec';
 
@@ -115,7 +115,8 @@ export const DEFAULTS = {
 //  - Polarizadas (25-nov, tienda): promedio de (a) foto en mesa de luz, al cuadrado (sobre la cara la piel bajo la mica
 //    también recibe la luz filtrada: doble paso) y (b) medición en vivo sobre la cara (piel bajo la mica ÷ mejilla, sin reflejos).
 //  - Entintadas: foto de la mica sobre fondo gris ÷ fondo (tabla de colores de Zul).
-// color = transmitancia medida (lo que se pinta sobre la mica); swatch = color de muestra del Figma (UI).
+// color = transmitancia medida (lo que se pinta sobre la mica); swatch = círculo de la UI, derivado del color medido
+// (fotoentintadas como mica más gruesa para que se lea el tono; polarizadas un poco más luminosas).
 // Fotoentintadas: con luz UV (exterior) viran a café o gris. Tono activado un poco más claro que la
 // polarizada equivalente (~25–30 % de transmitancia, típico de un fotocromático activado).
 // Medido en tienda (25-nov) con micas activadas junto a la cara: gris ≈40 % de transmitancia; café algo rosado
@@ -123,18 +124,18 @@ export const DEFAULTS = {
 export const PHOTO_TARGETS = { cafe: '#c49993', gris: '#64686c' };
 
 const ALL_PRESETS = [
-  { id: 'pol-verde', group: 'Polarizadas', name: 'Verde', color: '#3d453f', swatch: '#42674E', density: 1, gradient: 0, mirror: 0 },
-  { id: 'pol-cafe', group: 'Polarizadas', name: 'Café', color: '#89675b', swatch: '#6C5F4C', density: 1, gradient: 0, mirror: 0 },
-  { id: 'pol-gris', group: 'Polarizadas', name: 'Gris', color: '#282b36', swatch: '#545A5C', density: 1, gradient: 0, mirror: 0 },
-  { id: 'pol-azul', group: 'Polarizadas', name: 'Azul', color: '#2e3541', swatch: '#005891', density: 1, gradient: 0, mirror: 0 },
+  { id: 'pol-verde', group: 'Polarizadas', name: 'Verde', color: '#3d453f', swatch: '#576059', density: 1, gradient: 0, mirror: 0 },
+  { id: 'pol-cafe', group: 'Polarizadas', name: 'Café', color: '#89675b', swatch: '#927165', density: 1, gradient: 0, mirror: 0 },
+  { id: 'pol-gris', group: 'Polarizadas', name: 'Gris', color: '#282b36', swatch: '#464956', density: 1, gradient: 0, mirror: 0 },
+  { id: 'pol-azul', group: 'Polarizadas', name: 'Azul', color: '#2e3541', swatch: '#4D5562', density: 1, gradient: 0, mirror: 0 },
   // Fotoentintadas (interior): medidas en tienda 25-nov de fotos de las micas reales sobre hoja blanca (mica ÷ hoja)
   // y validadas en vivo por Zul sobre el armazón demo.
-  { id: 'azufre', group: 'Fotoentintadas', name: 'Azufre', color: '#f0cfbb', swatch: '#BF9000', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
-  { id: 'rosarito', group: 'Fotoentintadas', name: 'Rosarito', color: '#fffad8', swatch: '#FFF278', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
-  { id: 'celestun', group: 'Fotoentintadas', name: 'Celestún', color: '#ffd5e9', swatch: '#F3D0F2', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
-  { id: 'caleta', group: 'Fotoentintadas', name: 'Caleta', color: '#cde8fc', swatch: '#B2DFFE', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
-  { id: 'mermejita', group: 'Fotoentintadas', name: 'Mermejita', color: '#cfd8cd', swatch: '#9FB400', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
-  { id: 'miramar', group: 'Fotoentintadas', name: 'Miramar', color: '#c7c9f2', swatch: '#AA86D9', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
+  { id: 'azufre', group: 'Fotoentintadas', name: 'Azufre', color: '#f0cfbb', swatch: '#DB9775', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
+  { id: 'rosarito', group: 'Fotoentintadas', name: 'Rosarito', color: '#fffad8', swatch: '#FFF09B', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
+  { id: 'celestun', group: 'Fotoentintadas', name: 'Celestún', color: '#ffd5e9', swatch: '#FFA3CC', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
+  { id: 'caleta', group: 'Fotoentintadas', name: 'Caleta', color: '#cde8fc', swatch: '#94C9F8', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
+  { id: 'mermejita', group: 'Fotoentintadas', name: 'Mermejita', color: '#cfd8cd', swatch: '#97A894', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
+  { id: 'miramar', group: 'Fotoentintadas', name: 'Miramar', color: '#c7c9f2', swatch: '#898DE0', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
   // Chile · entintados (sin fotoentintado). Medidos de la foto de Zul (3 micas sobre pared blanca): mica ÷ pared.
   { id: 'cl-naranja', group: 'Entintadas', name: 'Naranja', color: '#c18e5a', swatch: '#C8874A', density: 1, gradient: 0, mirror: 0 },
   { id: 'cl-azul', group: 'Entintadas', name: 'Azul', color: '#86aecc', swatch: '#6F9CC0', density: 1, gradient: 0, mirror: 0 },
