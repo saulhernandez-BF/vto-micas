@@ -6,6 +6,7 @@ import { Renderer } from './renderer.js';
 import { Debug } from './debug.js';
 import { loadConfig, saveConfig, resetConfig, merge, applyPreset, PRESETS, PHOTO_TARGETS, VERSION, isPolarized } from './config.js';
 import { PAIS } from './pais.js';
+import { isTest, startHeartbeat } from './remote.js';
 import { hexToRgb } from './math.js';
 import { loadCatalog } from './catalog.js';
 import { frameCache } from './frameCache.js';
@@ -22,6 +23,7 @@ if (!PRESETS.some((p) => p.id === cfg.lens.preset)) applyPreset(cfg, PRESETS.fin
 document.documentElement.dataset.pais = PAIS.id;
 for (const g of ['pol', 'tint']) { $(`lens-${g}-title`).textContent = PAIS.textos[g].titulo; $(`lens-${g}-sub`).textContent = PAIS.textos[g].sub; $(`sw-${g}`).setAttribute('aria-label', PAIS.textos[g].titulo); }
 if (!PAIS.fotoentintado) $('uv').style.display = 'none';
+$('test-badge').hidden = !isTest();
 /** Micas permitidas para el modelo elegido (sólo las que existen en este país); null = todas */
 function modelTints(m) { const t = m?.tints?.filter((id) => PRESETS.some((p) => p.id === id)); return t?.length ? t : null; }
 const DEFAULTS_DETECT = { rays: 64, samples: 32 }; // valores base (modo normal y ligero)
@@ -833,6 +835,8 @@ async function filterCountry(models, url) {
   if (new URLSearchParams(location.search).has('reporte')) openUsage();
   if (new URLSearchParams(location.search).has('ajuste')) tuner.open();
   // Actualización silenciosa: si subiste una versión nueva, se recarga sola cuando no hay nadie enfrente
+  // Monitor de tablets (hoja "VTO Micas · Tablets")
+  startHeartbeat(() => ({ device: analytics.device, version: VERSION, camara: app.kind === 'camera' && !app.paused ? 'sí' : 'no', por_enviar: Math.max(0, analytics.visits.length - analytics.sent) }));
   startUpdater(VERSION, () => !!app.idle || (app.kind === 'camera' && !app.lm && performance.now() - (app.lostSince ?? 0) > 30000));
 })();
 for (const id of ['mode-seg', 'uv']) $(id).addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); $(id).click(); } });

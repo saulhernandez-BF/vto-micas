@@ -293,3 +293,7 @@ html.tuning .picker { z-index: 40; }
 @keyframes tilt { 0%, 30% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0deg); } }
 
 .perf { white-space: pre; }
+
+/* Equipo de prueba (?prueba): sus visitas no cuentan en el tablero */
+.test-badge { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 12px; z-index: 30; padding: 4px 10px; border-radius: 999px; background: #bb2415; color: #fff; font: 500 12px/1.2 'Apercu', sans-serif; letter-spacing: .06em; text-transform: uppercase; pointer-events: none; }
+.test-badge[hidden] { display: none; }

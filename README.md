@@ -88,6 +88,8 @@ Todo lo que cambia entre países vive en **`src/pais.js`**; el resto del código
 |---|---|---|
 | `?tienda=polanco` | Nombre de la tienda. Todas sus visitas llegan a la hoja central con ese nombre. | Sí |
 | `?tienda=` (vacío) o `?tienda=no` | Borra la tienda guardada (para compus de prueba: sus visitas llegan como `sin-tienda`). | Sí |
+| `?prueba` | Equipo de prueba: muestra la etiqueta PRUEBA arriba a la izquierda, sus visitas llegan con `prueba=1` (el tablero las oculta) y no se registra en el monitor de tablets. | Sí |
+| `?prueba=0` | Quita el modo prueba. | Sí |
 | `?kiosk` | Modo kiosko (ver [sección 10](#10-modo-kiosko)). | Sí |
 | `?kiosk=0` | Apaga el modo kiosko. | Sí |
 
@@ -118,6 +120,10 @@ Todo lo que cambia entre países vive en **`src/pais.js`**; el resto del código
 | Esc | Cerrar catálogo |
 
 ---
+
+### Monitor de tablets
+
+Cada tablet con tienda (y sin `?prueba`) avisa que está viva al arrancar y cada hora. La hoja central guarda una fila por tablet en **"VTO Micas · Tablets"** (otra hoja de Google, su primera pestaña): tienda, país, versión, primera y última señal, si la cámara está activa y cuántas visitas tiene por enviar. El tablero "Probador de Micas · Uso" la muestra como En línea (≤ 75 min), Sin señal reciente (≤ 6 h) o Apagada, y tiene un botón **Quitar** para sacar del monitor una tablet retirada (si vuelve a mandar señal, regresa sola).
 
 ## 3. Poner una tablet nueva
 
