@@ -1,6 +1,6 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
 import { PAIS } from './pais.js';
-export const VERSION = '0.9.13';
+export const VERSION = '0.9.14';
 // Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
 export const REMOTE_URL = 'https://script.google.com/macros/s/AKfycbyPvqpy4w7FGJdoeyv9uiuFAWJc5VqALXZBugLimZMUqeIU2FZ81lEhLA3s1xzhMQ4/exec';
 
@@ -96,7 +96,9 @@ export const DEFAULTS = {
   catalog: { modelId: '', size: '', irisMm: 11.7, scaleAdj: 0.91, // el iris de MediaPipe sale ~9 % grande ⇒ micas de más (medido con Igor II)
     maxYaw: 12, maxPitch: 12, calibFrames: 45, autoLock: true, priorWeight: 1, lostResetSec: 3, resetModelOnLost: true, suggestConf: 0.4, suggestAfterSec: 2.5,
     // Reconocimiento automático del modelo (modo Auto): evaluaciones mínimas, error máximo y ventaja sobre el 2º
-    autoRecognize: true, autoMinEvals: 6, autoMaxScore: 0.15, autoMargin: 0.02, autoMinConf: 0.35,
+    // Apagado (25-nov): con armazones transparentes el contorno detectado es pobre y elegía modelos equivocados
+    // (Rivers → Gretchen / Gabriela; Rivers quedaba 6.º con diferencias de 0.02). Auto pinta con el contorno detectado.
+    autoRecognize: false, autoMinEvals: 6, autoMaxScore: 0.15, autoMargin: 0.02, autoMinConf: 0.35,
     turnCalib: true, turnMinYaw: 15, turnMaxYaw: 50, turnFrames: 60, turnPrior: 1 },
   guide: { enabled: true, minRel: 0.12, maxRel: 0.4, centerTol: 0.15, delaySec: 0.8, idleSec: 6, idleTrackHz: 5 },
   prior: { cx: 0.37, cy: 0.0, a: 0.27, b: 0.2, n: 2.6 },
@@ -139,7 +141,7 @@ export const PRESETS = PAIS.presets.map((id) => ALL_PRESETS.find((p) => p.id ===
 export const isPolarized = (p) => p?.group === 'Polarizadas';
 { const p = PRESETS.find((x) => x.id === PAIS.defaultPreset) || PRESETS[0]; DEFAULTS.lens.preset = p.id; DEFAULTS.lens.color = p.color; }
 
-const KEY = 'vto-micas:config:v15' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
+const KEY = 'vto-micas:config:v16' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
 
 export function merge(base, over) {
   if (!over || typeof over !== 'object') return base;

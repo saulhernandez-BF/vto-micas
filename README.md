@@ -191,6 +191,8 @@ El cálculo se hace en el navegador de la tablet. No hay servidor propio; la ún
 - **¿Trae lentes? (evidencia de armazón):** además del aro, se mide el **puente sobre la nariz** y las **varillas** junto a las sienes. Se usa la relación señal/ruido de una franja perpendicular y qué tan recta es la línea encontrada. Con histéresis (`frameOn` / `frameOff`), esto decide si se pinta o no. Umbrales actuales: **3.0 / 2.2**, y con modelo elegido **2.2 / 1.6**, promediando ~0.9 s (`frameTau`). Medido en tienda: sin lentes 1.1–1.5 quieto y hasta 2.3–2.9 gesticulando; acetato transparente 10–15 de frente y ≥3 de perfil; aro oscuro 15–20. Gracias a esto se detectan también armazones al aire (sin aro).
 
 **Reconocimiento automático de modelo** (`src/autoMatch.js`)
+
+> **Apagado desde v0.9.14** (`catalog.autoRecognize: false`). En tienda, con un Rivers transparente, el modelo correcto quedaba 6.º y se fijaban modelos equivocados (Gretchen, Gabriela), que pintaban con la forma incorrecta. En Auto se pinta con el contorno que detecta del aro; eligiendo el modelo se usa la forma exacta. Se puede volver a prender desde `?debug` para pruebas.
 - Cada ~300 ms, con la cabeza de frente, compara el contorno aprendido contra los planos de los 113 modelos del catálogo con tres medidas:
   - una "firma" polar de 72 ángulos de la forma;
   - la proporción alto/ancho;
