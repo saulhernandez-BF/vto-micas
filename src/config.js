@@ -1,6 +1,6 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
 import { PAIS } from './pais.js';
-export const VERSION = '0.9.14';
+export const VERSION = '0.9.15';
 // Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
 export const REMOTE_URL = 'https://script.google.com/macros/s/AKfycbyPvqpy4w7FGJdoeyv9uiuFAWJc5VqALXZBugLimZMUqeIU2FZ81lEhLA3s1xzhMQ4/exec';
 
@@ -124,13 +124,14 @@ const ALL_PRESETS = [
   { id: 'pol-cafe', group: 'Polarizadas', name: 'Café', color: '#685e51', swatch: '#6C5F4C', density: 1, gradient: 0, mirror: 0 },
   { id: 'pol-gris', group: 'Polarizadas', name: 'Gris', color: '#494949', swatch: '#545A5C', density: 1, gradient: 0, mirror: 0 },
   { id: 'pol-azul', group: 'Polarizadas', name: 'Azul', color: '#314767', swatch: '#005891', density: 1, gradient: 0, mirror: 0 },
-  // Azufre: sin medición real todavía → aproximado a partir del color del Figma (#BF9000) aclarado como las demás entintadas
-  { id: 'azufre', group: 'Fotoentintadas', name: 'Azufre', color: '#e2cd8c', swatch: '#BF9000', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
-  { id: 'rosarito', group: 'Fotoentintadas', name: 'Rosarito', color: '#f3f0bd', swatch: '#FFF278', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
-  { id: 'celestun', group: 'Fotoentintadas', name: 'Celestún', color: '#e8becd', swatch: '#F3D0F2', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
-  { id: 'caleta', group: 'Fotoentintadas', name: 'Caleta', color: '#a4b2c1', swatch: '#B2DFFE', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
-  { id: 'mermejita', group: 'Fotoentintadas', name: 'Mermejita', color: '#d9ddb5', swatch: '#9FB400', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
-  { id: 'miramar', group: 'Fotoentintadas', name: 'Miramar', color: '#9e9cc2', swatch: '#AA86D9', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
+  // Fotoentintadas (interior): medidas en tienda 25-nov de fotos de las micas reales sobre hoja blanca (mica ÷ hoja)
+  // y validadas en vivo por Zul sobre el armazón demo.
+  { id: 'azufre', group: 'Fotoentintadas', name: 'Azufre', color: '#f0cfbb', swatch: '#BF9000', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
+  { id: 'rosarito', group: 'Fotoentintadas', name: 'Rosarito', color: '#fffad8', swatch: '#FFF278', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
+  { id: 'celestun', group: 'Fotoentintadas', name: 'Celestún', color: '#ffd5e9', swatch: '#F3D0F2', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
+  { id: 'caleta', group: 'Fotoentintadas', name: 'Caleta', color: '#cde8fc', swatch: '#B2DFFE', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
+  { id: 'mermejita', group: 'Fotoentintadas', name: 'Mermejita', color: '#cfd8cd', swatch: '#9FB400', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
+  { id: 'miramar', group: 'Fotoentintadas', name: 'Miramar', color: '#c7c9f2', swatch: '#AA86D9', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
   // Chile · entintados (sin fotoentintado). Medidos de la foto de Zul (3 micas sobre pared blanca): mica ÷ pared.
   { id: 'cl-naranja', group: 'Entintadas', name: 'Naranja', color: '#c18e5a', swatch: '#C8874A', density: 1, gradient: 0, mirror: 0 },
   { id: 'cl-azul', group: 'Entintadas', name: 'Azul', color: '#86aecc', swatch: '#6F9CC0', density: 1, gradient: 0, mirror: 0 },
@@ -141,7 +142,7 @@ export const PRESETS = PAIS.presets.map((id) => ALL_PRESETS.find((p) => p.id ===
 export const isPolarized = (p) => p?.group === 'Polarizadas';
 { const p = PRESETS.find((x) => x.id === PAIS.defaultPreset) || PRESETS[0]; DEFAULTS.lens.preset = p.id; DEFAULTS.lens.color = p.color; }
 
-const KEY = 'vto-micas:config:v16' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
+const KEY = 'vto-micas:config:v17' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
 
 export function merge(base, over) {
   if (!over || typeof over !== 'object') return base;
