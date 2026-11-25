@@ -188,7 +188,7 @@ El cálculo se hace en el navegador de la tablet. No hay servidor propio; la ún
   - interpolación de rayos sin borde;
   - re-aprendizaje si aparece una medida alternativa consistente.
 - **Medio aro:** si sólo se ve la mitad superior, se usa la forma por rayos en lugar del ajuste genérico.
-- **¿Trae lentes? (evidencia de armazón):** además del aro, se mide el **puente sobre la nariz** y las **varillas** junto a las sienes. Se usa la relación señal/ruido de una franja perpendicular y qué tan recta es la línea encontrada. Con histéresis (`frameOn` / `frameOff`), esto decide si se pinta o no. Umbrales actuales: **2.0 / 1.6**, y con modelo elegido **1.6 / 1.3**, promediando ~0.9 s (`frameTau`). Medido: sin lentes ≈0.8–1.4; acetato translúcido con poca luz ≈2.2–2.5; aro oscuro 15–20. Gracias a esto se detectan también armazones al aire (sin aro).
+- **¿Trae lentes? (evidencia de armazón):** además del aro, se mide el **puente sobre la nariz** y las **varillas** junto a las sienes. Se usa la relación señal/ruido de una franja perpendicular y qué tan recta es la línea encontrada. Con histéresis (`frameOn` / `frameOff`), esto decide si se pinta o no. Umbrales actuales: **3.0 / 2.2**, y con modelo elegido **2.2 / 1.6**, promediando ~0.9 s (`frameTau`). Medido en tienda: sin lentes 1.1–1.5 quieto y hasta 2.3–2.9 gesticulando; acetato transparente 10–15 de frente y ≥3 de perfil; aro oscuro 15–20. Gracias a esto se detectan también armazones al aire (sin aro).
 
 **Reconocimiento automático de modelo** (`src/autoMatch.js`)
 - Cada ~300 ms, con la cabeza de frente, compara el contorno aprendido contra los planos de los 113 modelos del catálogo con tres medidas:
@@ -437,7 +437,7 @@ certs/                Certificado HTTPS local (ignorado por git, NUNCA subir)
 | La tablet muestra una versión vieja | Esperar ≤ 10 min (se actualiza cuando está libre) o recargar. En computadora, usar pestaña privada. Confirmar con `?perf`. |
 | "Activa la cámara" | El permiso está negado: en Ajustes del navegador permitir cámara para el sitio y tocar Reintentar. |
 | "La cámara está ocupada" | Otra app la usa (FaceTime, cámara). Cerrarla; la app reintenta sola. |
-| No pinta aunque traigo lentes | La evidencia de armazón no pasa el umbral (luz muy plana, acetato translúcido o armazón muy delgado). Elegir el modelo baja el umbral a 1.6. Ajustar `frameOn` / `frameOff` en debug. |
+| No pinta aunque traigo lentes | La evidencia de armazón no pasa el umbral (luz muy plana, acetato translúcido o armazón muy delgado). Elegir el modelo baja el umbral a 2.2. Ajustar `frameOn` / `frameOff` en debug. |
 | Pinta sin lentes | Bajar sensibilidad: subir `frameOn` en debug y reportarlo. |
 | La mica se ve más grande o chica que el aro | Ajustarlo con `?ajuste` para ese modelo (o `scaleAdj` global en debug). |
 | Va lenta | Ver `?perf`. Si "(ligero)" aparece seguido y la cámara está a 720, la tablet está al límite. |

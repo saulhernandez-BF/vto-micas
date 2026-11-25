@@ -1,6 +1,6 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
 import { PAIS } from './pais.js';
-export const VERSION = '0.9.12';
+export const VERSION = '0.9.13';
 // Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
 export const REMOTE_URL = 'https://script.google.com/macros/s/AKfycbyPvqpy4w7FGJdoeyv9uiuFAWJc5VqALXZBugLimZMUqeIU2FZ81lEhLA3s1xzhMQ4/exec';
 
@@ -84,10 +84,11 @@ export const DEFAULTS = {
     wrapDeg: 13.5,           // curvatura del frente hacia la sien
     procWidth: 360,
     renderWithoutGlasses: false, // sin lentes detectados no se pinta mica
-    // Evidencia de armazón (puente/varillas). Medido: sin lentes ≈0.8–1.4; acetato translúcido con poca luz ≈2.2–2.5
-    // (fotos de estudio 6–9); aro oscuro/metal 15–20. Con modelo elegido se usa un umbral más bajo.
-    frameOn: 2.0,
-    frameOff: 1.6, frameOnModel: 1.6, frameOffModel: 1.3, frameTau: 0.9,
+    // Evidencia de armazón (puente/varillas). Medido en tienda (25-nov, Mac): sin lentes 1.1–1.5 quieto y hasta 2.3–2.9
+    // gesticulando (cejas, giros); acetato transparente 10–15 de frente y ≥3 de perfil; aro oscuro/metal 15–20.
+    // Con modelo elegido se usa un umbral más bajo.
+    frameOn: 3.0,
+    frameOff: 2.2, frameOnModel: 2.2, frameOffModel: 1.6, frameTau: 0.9,
     lock: false,
   },
   // Forma base en unidades locales (1 = distancia entre comisuras externas ≈ 9 cm)
@@ -138,7 +139,7 @@ export const PRESETS = PAIS.presets.map((id) => ALL_PRESETS.find((p) => p.id ===
 export const isPolarized = (p) => p?.group === 'Polarizadas';
 { const p = PRESETS.find((x) => x.id === PAIS.defaultPreset) || PRESETS[0]; DEFAULTS.lens.preset = p.id; DEFAULTS.lens.color = p.color; }
 
-const KEY = 'vto-micas:config:v14' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
+const KEY = 'vto-micas:config:v15' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
 
 export function merge(base, over) {
   if (!over || typeof over !== 'object') return base;
