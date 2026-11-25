@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-pais="mx">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
@@ -10,7 +10,7 @@
   <link rel="preload" href="assets/fonts/perfectlynineties-regular.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/apercu-regular.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/perfectlynineties-italic.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="styles.css?v=0.9.4" />
+  <link rel="stylesheet" href="styles.css?v=0.9.8" />
 </head>
 <body class="no-debug">
   <main id="stage">
@@ -69,19 +69,19 @@
     <!-- Micas -->
     <nav class="lenses" aria-label="Micas">
       <div class="lens-group">
-        <div class="lens-head"><h3>Polarizadas</h3><p>Para evitar el vampirazo</p></div>
+        <div class="lens-head"><h3 id="lens-pol-title">Polarizadas</h3><p id="lens-pol-sub">Para evitar el vampirazo</p></div>
         <div id="sw-pol" class="swatches" role="radiogroup" aria-label="Polarizadas"></div>
       </div>
       <img class="divider" src="assets/ui/divider.svg" alt="" width="2" height="80" />
       <div class="lens-group">
         <div class="lens-head">
-          <div class="lens-title"><h3>Fotoentintadas</h3>
+          <div class="lens-title"><h3 id="lens-tint-title">Fotoentintadas</h3>
             <div id="uv" class="seg seg-text seg-toggle" role="button" tabindex="0" aria-label="Cambiar entre interior y exterior">
               <button id="uv-in" class="seg-btn" role="radio" aria-checked="true">Interior</button>
               <button id="uv-out" class="seg-btn" role="radio" aria-checked="false">Exterior</button>
             </div>
           </div>
-          <p>Enchula tus lentes y oscurécelos con la luz</p>
+          <p id="lens-tint-sub">Enchula tus lentes y oscurécelos con la luz</p>
         </div>
         <div id="sw-tint" class="swatches" role="radiogroup" aria-label="Fotoentintadas"></div>
       </div>
@@ -140,6 +140,6 @@
   </section>
 
   <video id="video" playsinline muted autoplay></video>
-  <script type="module" src="src/main.js?v=0.9.4"></script>
+  <script type="module" src="src/main.js?v=0.9.8"></script>
 </body>
 </html>

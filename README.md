@@ -4,7 +4,7 @@ Probador virtual de micas de sol para tiendas Ben & Frank.
 
 El cliente se pone un **armazón óptico de exhibición** (micas transparentes), se para frente a una tablet y ve **ese mismo armazón con micas de sol**: Polarizadas o Fotoentintadas, en los colores reales de B&F. No tiene que configurar nada: la app detecta la cara y el armazón, y pinta el color dentro de las micas en tiempo real.
 
-- **Sitio publicado:** https://saulhernandez-bf.github.io/vto-micas/
+- **Sitio publicado:** https://saulhernandez-bf.github.io/vto-micas/ (México) · https://saulhernandez-bf.github.io/vto-micas/cl/ (Chile) — ver [Países](#países-méxico-y-chile)
 - **Repo:** https://github.com/saulhernandez-BF/vto-micas (público; lo que se sube a `main` es lo que se publica)
 - **Diseño:** Figma "🎨 Librería - Arte Mkt" → nodos 1539:1588 (pantalla principal), 1541:1589 (mensaje central), 1561:1700 (pantalla de espera)
 - **Versión actual:** ver `VERSION` en `src/config.js` (también se ve con `?perf`)
@@ -55,7 +55,32 @@ El cliente se pone un **armazón óptico de exhibición** (micas transparentes),
 
 ## 2. Links y parámetros
 
-Hay una sola página. Todo lo demás son parámetros que se agregan al link y se pueden combinar con `&`.
+Una página por país (misma app). Todo lo demás son parámetros que se agregan al link y se pueden combinar con `&`.
+
+| País | Link |
+|---|---|
+| México | `https://saulhernandez-bf.github.io/vto-micas/` (la de siempre; también `…/vto-micas/mx/`) |
+| Chile | `https://saulhernandez-bf.github.io/vto-micas/cl/` |
+
+Ejemplo Chile: `https://saulhernandez-bf.github.io/vto-micas/cl/?tienda=costanera&kiosk`. Para probar Chile en local sin carpeta: `?pais=cl`.
+
+### Países (México y Chile)
+
+Todo lo que cambia entre países vive en **`src/pais.js`**; el resto del código es el mismo.
+
+| | México | Chile |
+|---|---|---|
+| Micas | Polarizadas (Verde, Café, Gris, Azul) + Fotoentintadas (Azufre, Rosarito, Celestún, Caleta, Mermejita, Miramar) | Polarizadas (las mismas) + **Entintadas: Naranja, Azul, Rojo** |
+| Interior / Exterior | Sí (fotoentintado) | **No**: en Chile no hay fotoentintado, el switch no aparece |
+| Textos | "Para evitar el vampirazo" · "Enchula tus lentes y oscurécelos con la luz" | "Chao reflejos, hola nitidez" · "Dale color a tus lentes" |
+| Modelos | Los 110 del catálogo | Los 67 que se venden en Chile (`catalog/paises/cl.json`), con sus tallas |
+| Hoja central | columna `pais` = mx, hora de CDMX | columna `pais` = cl, hora de Santiago |
+
+- **Colores Chile:** medidos de la foto de las 3 micas sobre pared blanca (mica ÷ pared), igual que las entintadas de México. Si en tienda se ven muy claros u oscuros, se ajustan en `color` de `cl-naranja` / `cl-azul` / `cl-rojo` (`src/config.js`).
+- **Lista de modelos de Chile:** `tools/catalogo/paises/cl.csv` (copia de la hoja "Modelos CL": Ópticos + Solares). Si cambia: actualiza el CSV y corre `python3 tools/catalogo/build_paises.py`; avisa qué modelos no tienen plano. Un modelo de varias tallas muestra sólo las que hay en Chile; si queda una, se elige sola.
+- **Las carpetas `mx/` y `cl/` son generadas:** sólo tienen un `index.html` que apunta a los mismos archivos (`<base href="../">`) y marca el país. **Después de editar `index.html` o subir la versión, corre `python3 tools/paises_html.py`.**
+- Ajustes por modelo (`?ajuste`) son los mismos para los dos países: un armazón es el mismo en México y en Chile.
+- País nuevo: agrégalo en `src/pais.js` (micas, textos, lista de modelos, zona horaria), agrega la carpeta en `tools/paises_html.py` y en `TZ` de `tools/sheets/Code.gs`.
 
 **Para las tablets**
 
@@ -95,32 +120,16 @@ Hay una sola página. Todo lo demás son parámetros que se agregan al link y se
 
 ## 3. Poner una tablet nueva
 
-Tablets de tienda: **iPad mini (A17 Pro), iPadOS 26**, en vertical. Configurar una sola vez:
+1. Abrir en Safari / Chrome:
+   `https://saulhernandez-bf.github.io/vto-micas/?tienda=NOMBRE-DE-TIENDA&kiosk`
+   (nombre en minúsculas y sin espacios, por ejemplo `polanco`, `condesa`, `guadalajara-andares`).
+2. Permitir la cámara cuando lo pida.
+3. (iPad) Compartir → "Agregar a pantalla de inicio" para abrirla como app, y activar **Acceso guiado** (Ajustes → Accesibilidad) para que no se pueda salir.
+4. Dejarla conectada a la corriente, en vertical.
 
-**En Ajustes del iPad**
-1. **Pantalla y brillo → Bloqueo automático: Nunca.**
-2. **Batería → Modo de bajo consumo: apagado** (frena la animación y la cámara).
-3. **Ajustes → Apps → Safari → Cámara: Permitir** (para que no pregunte en cada visita).
-4. **Accesibilidad → Acceso guiado: activado** (con código), para que el cliente no pueda salir de la app.
+La tienda y el modo kiosko se guardan en la tablet; las siguientes veces basta abrir el link normal. Para revisar que quedó bien: abrir `?reporte` y ver que diga la tienda correcta.
 
-**En la app**
-5. Abrir en Safari: `https://saulhernandez-bf.github.io/vto-micas/?tienda=NOMBRE-DE-TIENDA&kiosk`
-   (nombre en minúsculas y sin espacios: `polanco`, `condesa`, `guadalajara-andares`…). Permitir la cámara.
-6. Compartir → **Agregar a pantalla de inicio**. En iPadOS 26 se abre como app (sin barra de Safari). Abrirla desde ese ícono.
-7. Con la app abierta, en el Centro de control:
-   - **Bloqueo de rotación: activado**, con la tablet en vertical. Una página web no puede bloquear la rotación; si la giran, la app muestra "Gira la tablet".
-   - **Center Stage: apagado** (el ícono de la cámara aparece en el Centro de control mientras la cámara está en uso). La app tolera el zoom automático, pero sin él la imagen es más nítida y estable.
-8. Triple clic en el botón superior para iniciar **Acceso guiado**.
-9. Dejarla conectada a la corriente.
-
-Para revisar: `?reporte` debe mostrar la tienda correcta, y `?perf` la versión y "(HQ)" (equipo con calidad alta).
-
-**Qué hace la app para este iPad**
-- Pide la cámara en **1080p** para que se vea nítida en la pantalla de 2266 × 1488. Si un equipo no da, baja sola a 1280 y luego a 720.
-- **Modo HQ:** si a los 3 s el equipo va sobrado (menos de 24 ms por cuadro), usa 96 rayos y 44 muestras (en vez de 64/32) para un contorno más fino. Si después se satura, regresa a lo normal.
-- Trabaja exactamente cuando llega cada cuadro de cámara (`requestVideoFrameCallback`), con menos retraso.
-- **En la pantalla de espera** busca caras sólo 5 veces por segundo, para que no se caliente en jornadas largas; con alguien enfrente, vuelve a velocidad completa.
-- Si la escala de la cara salta de golpe (zoom de Center Stage), reinicia el suavizado para que la mica no se quede atrás.
+---
 
 ## 4. Publicar cambios
 
@@ -131,8 +140,9 @@ git add -A && git commit -m "descripción del cambio" && git push pages HEAD:mai
 
 - GitHub Pages tarda 1–2 minutos en publicar.
 - **Las tablets se actualizan solas:** cada 10 minutos revisan `VERSION` en `src/config.js` y, si cambió, se recargan en cuanto nadie la está usando. Por eso **cada cambio debe subir `VERSION`** (y el `?v=` de `index.html` para el CSS y el JS principal).
-- Un service worker (`sw.js`, activo en todas las tablets) revalida cada archivo contra el servidor en cada carga, así que después de la primera visita nunca se mezclan módulos viejos con nuevos. La **primera vez** que un navegador abre la versión con service worker puede tardar hasta 10 min en ver todo nuevo (caché de GitHub Pages): recargar con Cmd+Shift+R o usar pestaña privada.
+- Para ver el cambio en tu compu al instante, usa una pestaña privada (el navegador guarda caché).
 - Para confirmar qué versión tiene una tablet, abre el link con `?perf`.
+- Si cambiaste `index.html` o la versión: `python3 tools/paises_html.py` antes del commit (regenera `mx/` y `cl/`).
 - **Nunca subir** `certs/` (llave privada del HTTPS local), `media/` (fotos de prueba, sólo para QA interno) ni los PDFs de los planos. Ya están en `.gitignore`.
 
 ---
@@ -171,10 +181,10 @@ El cálculo se hace en el navegador de la tablet. No hay servidor propio; la ún
   - interpolación de rayos sin borde;
   - re-aprendizaje si aparece una medida alternativa consistente.
 - **Medio aro:** si sólo se ve la mitad superior, se usa la forma por rayos en lugar del ajuste genérico.
-- **¿Trae lentes? (evidencia de armazón):** además del aro, se mide el **puente sobre la nariz** y las **varillas** junto a las sienes. Se usa la relación señal/ruido de una franja perpendicular y qué tan recta es la línea encontrada. Con histéresis (`frameOn` / `frameOff`), esto decide si se pinta o no. Gracias a esto se detectan también armazones al aire (sin aro).
+- **¿Trae lentes? (evidencia de armazón):** además del aro, se mide el **puente sobre la nariz** y las **varillas** junto a las sienes. Se usa la relación señal/ruido de una franja perpendicular y qué tan recta es la línea encontrada. Con histéresis (`frameOn` / `frameOff`), esto decide si se pinta o no. Umbrales actuales: **2.0 / 1.6**, y con modelo elegido **1.6 / 1.3**, promediando ~0.9 s (`frameTau`). Medido: sin lentes ≈0.8–1.4; acetato translúcido con poca luz ≈2.2–2.5; aro oscuro 15–20. Gracias a esto se detectan también armazones al aire (sin aro).
 
 **Reconocimiento automático de modelo** (`src/autoMatch.js`)
-- Cada ~300 ms, con la cabeza de frente, compara el contorno aprendido contra los planos de los 110 modelos del catálogo con tres medidas:
+- Cada ~300 ms, con la cabeza de frente, compara el contorno aprendido contra los planos de los 113 modelos del catálogo con tres medidas:
   - una "firma" polar de 72 ángulos de la forma;
   - la proporción alto/ancho;
   - el tamaño en mm (escala tomada del diámetro del iris ≈ 11.7 mm).
@@ -216,7 +226,7 @@ Pantalla de espera, espejo, mensajes, switches, catálogo, botón Antes, pantall
 
 ## 7. Catálogo de modelos y planos CAD
 
-`catalog/models.json` tiene **110 modelos**. Cada uno incluye:
+`catalog/models.json` tiene **113 modelos**. Cada uno incluye:
 
 | Campo | Qué es |
 |---|---|
@@ -227,14 +237,11 @@ Pantalla de espera, espejo, mensajes, switches, catálogo, botón Antes, pantall
 | `sizes` | Tallas disponibles con sus medidas |
 | `tints` | Micas que existen para ese modelo |
 | `rimless` | Si es al aire |
-| `tuneOk` | `true` si el ajuste ya se aprobó en tienda |
-| `tunes` | (opcional) Ajuste fino por talla, p. ej. `{ "G": { k, dy, dbx } }`. Si una talla no tiene, se usa `tune`. |
-| `tune` | (opcional) Ajuste fino medido en tienda: `{ k: escala, dy: altura en mm, dbx: separación extra entre micas en mm }` |
+| `tune` | (opcional) Ajuste fino medido en tienda: `{ k: escala, dy: altura en mm }` |
 | `source` | De dónde salió el contorno |
 
 - **105 modelos** tienen el contorno sacado de los **planos CAD de fábrica** (PDF vectoriales 1:1 de merch, carpeta de Drive "PLANOS/BEN&FRANK"). Se usa el **borde interior del aro** (lo que se ve de mica), no el ancho de lente de Galileo.
 - **Sin plano** (contorno de foto): Fran x Lucho, Molina Caviar, Sergioarmando x Gepe, Gloria M.
-- **Fuera del probador** (`tools/catalogo/excluir.txt`): clip-ons (Maria Clip On, Molina Clip On) y De Palma (no se puede hacer en ningún color). Los scripts los ignoran.
 
 Scripts en `tools/catalogo/` (Python, para regenerar el catálogo):
 
@@ -254,22 +261,13 @@ Se hace **una sola vez, antes del lanzamiento**, para que cada armazón quede pe
 1. Abrir `…/vto-micas/?ajuste` en una tablet, en tienda.
 2. Ponerse el armazón que muestra el panel (o elegir otro con ‹ › o tocando el nombre para abrir la lista).
 3. Mover:
-   - **Tamaño** (70–140 %): agranda o achica la mica pintada alrededor de su centro.
-   - **Altura** (±10 mm): la sube o baja.
-   - **Puente** (±10 mm): separa o junta las dos micas.
-   - Cada control tiene botones **−** / **+** para mover un paso fino; el slider es para movimientos grandes.
-   - **Modelos con tallas:** cada talla se ajusta por separado ("Ajuste de la talla: M · G · XG"). Al marcar una talla como lista pasa sola a la siguiente talla pendiente del mismo modelo; el modelo cuenta como listo cuando todas sus tallas están marcadas. Las tallas marcadas muestran ✓ (lista) o – (no está en tienda).
+   - **Tamaño** (88–112 %): agranda o achica la mica pintada alrededor de su centro.
+   - **Altura** (±3 mm): la sube o baja.
+   - Si el modelo tiene varias tallas, elegir la que se trae puesta.
 4. **Probar reconocimiento:** pasa a Auto y registra si la app reconoce ese modelo o con cuál lo confunde.
-5. **Queda bien · siguiente** o **No está en tienda**. El panel lleva la cuenta (p. ej. "37 de 110 listos").
+5. **Queda bien · siguiente** o **No está en tienda**. El panel lleva la cuenta (p. ej. "37 de 113 listos").
 6. Al terminar, **Exportar ajustes**: descarga un JSON y, si hay hoja central, lo manda a la pestaña "Ajustes".
-7. Ese JSON se integra al catálogo con `tools/catalogo/apply_tunes.py`:
-   ```bash
-   cd tools/catalogo
-   python3 apply_tunes.py ajustes/ajustes-AAAA-MM-DD.json --reset id1,id2   # --reset = modelos con problemas → de fábrica
-   ```
-   Los modelos "listo" quedan con su ajuste (`tune` / `tunes`) y `tuneOk: true`; la herramienta `?ajuste` los marca como "aprobado (catálogo)" y, al avanzar, salta directo a los pendientes. Los JSON de cada vuelta se guardan en `tools/catalogo/ajustes/`.
-
-**Historial:** 1.ª vuelta en tienda (13-oct-2026): 37 modelos aprobados, 72 regresados a fábrica para revisarse en una 2.ª vuelta, Ataulfo no estaba en tienda.
+7. Ese JSON se integra a `catalog/models.json` (campo `tune` por modelo) y se publica.
 
 Mientras tanto, los ajustes ya se aplican en la tablet donde se hicieron (se guardan en `localStorage`). La herramienta también registra la evidencia de armazón medida con cada modelo, que sirve para calibrar la detección.
 
@@ -312,7 +310,7 @@ Se activa con `?kiosk` (se recuerda en la tablet). Archivos: `src/kiosk.js` y `s
 - **Pantalla siempre encendida** (Wake Lock).
 - **Pantalla completa** al primer toque.
 - Sin menú al mantener presionado, sin zoom con pellizco, sin cursor.
-- **Funciona sin Wi-Fi:** el service worker (activo en todas las tablets, no sólo en kiosko) guarda la app, MediaPipe y el modelo de cara. Los archivos de la app siempre se revisan contra el servidor, así que no se queda con versiones viejas.
+- **Funciona sin Wi-Fi:** un service worker guarda la app, MediaPipe y el modelo de cara. Los archivos de la app siempre se revisan contra el servidor, así que no se queda con versiones viejas.
 - **Vigilante de cámara:** si no llega un cuadro nuevo en 3 s, reabre la cámara.
 - **Recarga nocturna** a las 4 a. m. si nadie la está usando.
 
@@ -392,7 +390,7 @@ src/
   debug.js            Panel de debug (lil-gui), overlays y HUD
   filters.js, math.js Utilidades (One Euro, geometría)
 catalog/
-  models.json         Catálogo de 110 modelos (contornos en mm, medidas, tallas, micas)
+  models.json         Catálogo de 113 modelos (contornos en mm, medidas, tallas, micas)
   models.prev.json    Catálogo previo a aplicar los planos (base de apply_planos.py)
 assets/
   fonts/              Apercu, Perfectly Nineties (regular e itálica)
@@ -417,7 +415,7 @@ certs/                Certificado HTTPS local (ignorado por git, NUNCA subir)
 | `REMOTE_URL` | URL del buzón de la hoja central (vacío = sólo local). |
 | `KEY` (`vto-micas:config:vN`) | Llave de guardado en el navegador. Subir `N` cuando cambian valores por defecto, para que las tablets no usen la config vieja guardada. |
 | `lens.*` | Mica activa, densidad, degradado, `polGlare` (reflejos en polarizadas), tiempos de fotoentintado. |
-| `detect.*` | Detección de aro: rayos, contraste, umbrales `frameOn` 3.5 / `frameOff` 2.5 de evidencia de armazón (medido en vivo: sin lentes ≈1.1–1.4, con lentes 15–20). |
+| `detect.*` | Detección de aro: rayos, contraste, umbrales `frameOn` / `frameOff` de evidencia de armazón. |
 | `catalog.*` | `irisMm`, `scaleAdj` (escala global de la mica), calibración, `lostResetSec`, reconocimiento automático (`autoRecognize`, `autoMinEvals`, `autoMaxScore`, `autoMargin`, `autoMinConf`). |
 | `guide.*` | Guía de encuadre (`minRel` / `maxRel` = qué tan lejos / cerca, `centerTol`) e `idleSec` (segundos sin nadie para la pantalla de espera). |
 | `light.*` | Reflejos reales y sintéticos, brillo. |
@@ -432,7 +430,7 @@ certs/                Certificado HTTPS local (ignorado por git, NUNCA subir)
 | La tablet muestra una versión vieja | Esperar ≤ 10 min (se actualiza cuando está libre) o recargar. En computadora, usar pestaña privada. Confirmar con `?perf`. |
 | "Activa la cámara" | El permiso está negado: en Ajustes del navegador permitir cámara para el sitio y tocar Reintentar. |
 | "La cámara está ocupada" | Otra app la usa (FaceTime, cámara). Cerrarla; la app reintenta sola. |
-| No pinta aunque traigo lentes | La evidencia de armazón no pasa el umbral (luz muy plana o armazón muy delgado). Probar eligiendo el modelo. Ajustar `frameOn` / `frameOff` en debug. |
+| No pinta aunque traigo lentes | La evidencia de armazón no pasa el umbral (luz muy plana, acetato translúcido o armazón muy delgado). Elegir el modelo baja el umbral a 1.6. Ajustar `frameOn` / `frameOff` en debug. |
 | Pinta sin lentes | Bajar sensibilidad: subir `frameOn` en debug y reportarlo. |
 | La mica se ve más grande o chica que el aro | Ajustarlo con `?ajuste` para ese modelo (o `scaleAdj` global en debug). |
 | Va lenta | Ver `?perf`. Si "(ligero)" aparece seguido y la cámara está a 720, la tablet está al límite. |

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es" data-pais="mx">
+<head>
+  <meta charset="utf-8" />
+  <base href="../" />
+  <!-- GENERADO por tools/paises_html.py: no editar, edita index.html -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#000000" />
+  <title>Pruébatelos · Ben &amp; Frank</title>
+  <link rel="icon" href="assets/ui/glasses-hint.svg" />
+  <link rel="preload" href="assets/fonts/perfectlynineties-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/apercu-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/perfectlynineties-italic.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="styles.css?v=0.9.8" />
+</head>
+<body class="no-debug">
+  <main id="stage">
+    <canvas id="view" aria-label="Vista de prueba virtual"></canvas>
+    <div class="shade shade-top" aria-hidden="true"></div>
+    <div class="shade shade-bottom" aria-hidden="true"></div>
+  </main>
+
+  <!-- Pantalla de espera (Figma 1561:1700): la cámara sigue viva detrás, oscurecida -->
+  <section id="idle" class="idle-screen hidden" aria-label="Pruébate solar o entintado al instante">
+    <img class="idle-logo" src="assets/ui/logo-bf.svg" alt="Ben &amp; Frank" width="171.2" height="20" />
+    <h1 class="idle-title"><span>Pruébate</span><em>solar</em><span>o</span><em>entintado</em><span>al instante</span></h1>
+  </section>
+
+  <!-- Capa 3 · UI de kiosko (Figma: Librería Arte Mkt · Section 3) -->
+  <div id="ui" class="ui hidden">
+    <!-- Detección: Auto / Modelo -->
+    <section id="detect" class="detect" aria-label="Detección">
+      <h2 id="detect-title" class="detect-title">Detección</h2>
+      <div id="mode-seg" class="seg seg-toggle" role="button" tabindex="0" aria-label="Cambiar entre detección automática y elegir modelo">
+        <button id="mode-auto" class="seg-btn" role="radio" aria-label="Automático">
+          <img class="on" src="assets/ui/sparkles-on.svg" alt="" width="14" height="14" />
+          <img class="off" src="assets/ui/sparkles-off.svg" alt="" width="14" height="14" />
+        </button>
+        <button id="mode-model" class="seg-btn" role="radio" aria-label="Elegir modelo">
+          <img class="on" src="assets/ui/glasses-on.svg" alt="" width="14" height="14" />
+          <img class="off" src="assets/ui/glasses-off.svg" alt="" width="14" height="14" />
+        </button>
+      </div>
+      <p id="mode-auto-label" class="detect-label center">Auto</p>
+      <button id="auto-chip" class="chip auto-chip" hidden aria-label="Modelo reconocido. Toca para confirmarlo"></button>
+      <div id="mode-model-info" class="model-info" hidden>
+        <p class="detect-label">Modelo:</p>
+        <button id="model-chip" class="chip solid"></button>
+        <div id="sizes" class="sizes" role="radiogroup" aria-label="Talla"></div>
+      </div>
+    </section>
+
+    <!-- Mensaje central: sugerencia / calibración (tap → catálogo) -->
+    <button id="hint" class="hint hidden" type="button">
+      <span class="hint-icon">
+        <img src="assets/ui/glasses-hint.svg" alt="" width="34" height="34" />
+        <svg class="ring" viewBox="0 0 44 44" aria-hidden="true"><circle class="trk" cx="22" cy="22" r="20" /><circle id="hint-ring" class="bar" cx="22" cy="22" r="20" /></svg>
+      </span>
+      <span id="hint-text" class="hint-text"><span>Para un ajuste perfecto</span><span>elige tu modelo</span></span>
+    </button>
+
+    <!-- Antes / después: mantener presionado (un toque lo deja 3 s) -->
+    <button id="compare" class="compare off" type="button" aria-pressed="false" aria-label="Mantén oprimido para ver sin mica">
+      <span class="compare-ring">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM8 13V3a5 5 0 0 1 0 10Zm0-12.75a7.75 7.75 0 1 1 0 15.5 7.75 7.75 0 0 1 0-15.5Z" fill="currentColor" fill-rule="evenodd"/></svg>
+      </span>
+      <span class="compare-lbl">Antes</span>
+    </button>
+
+    <!-- Micas -->
+    <nav class="lenses" aria-label="Micas">
+      <div class="lens-group">
+        <div class="lens-head"><h3 id="lens-pol-title">Polarizadas</h3><p id="lens-pol-sub">Para evitar el vampirazo</p></div>
+        <div id="sw-pol" class="swatches" role="radiogroup" aria-label="Polarizadas"></div>
+      </div>
+      <img class="divider" src="assets/ui/divider.svg" alt="" width="2" height="80" />
+      <div class="lens-group">
+        <div class="lens-head">
+          <div class="lens-title"><h3 id="lens-tint-title">Fotoentintadas</h3>
+            <div id="uv" class="seg seg-text seg-toggle" role="button" tabindex="0" aria-label="Cambiar entre interior y exterior">
+              <button id="uv-in" class="seg-btn" role="radio" aria-checked="true">Interior</button>
+              <button id="uv-out" class="seg-btn" role="radio" aria-checked="false">Exterior</button>
+            </div>
+          </div>
+          <p id="lens-tint-sub">Enchula tus lentes y oscurécelos con la luz</p>
+        </div>
+        <div id="sw-tint" class="swatches" role="radiogroup" aria-label="Fotoentintadas"></div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Tablet en horizontal: la experiencia es vertical (una página web no puede bloquear la rotación en iPad) -->
+  <section id="rotate" class="start rotate hidden" aria-live="polite">
+    <img class="idle-logo" src="assets/ui/logo-bf.svg" alt="Ben &amp; Frank" width="171.2" height="20" />
+    <svg class="rotate-icon" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><rect x="20" y="6" width="24" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M14 52c6 6 16 8 24 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M38 52l2 6-6 2" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h2 class="start-title">Gira la <em>tablet</em></h2>
+    <p class="status">El probador funciona en vertical.</p>
+  </section>
+
+  <!-- Catálogo: ¿Qué armazón traes puesto? -->
+  <section id="picker" class="picker hidden" aria-label="Elegir modelo" aria-modal="true" role="dialog">
+    <header class="picker-head">
+      <div>
+        <h2>¿Qué armazón traes puesto?</h2>
+        <p>Checa nuestros modelos y elige justo el que traes puesto</p>
+      </div>
+      <button id="picker-close" class="icon-btn" aria-label="Cerrar"><img src="assets/ui/close.svg" alt="" width="24" height="24" /></button>
+    </header>
+    <div class="picker-body">
+      <div id="picker-list" class="picker-list"></div>
+      <nav id="picker-index" class="picker-index" aria-label="Índice alfabético"></nav>
+    </div>
+  </section>
+
+  <!-- Arranque (sólo si la cámara no abre sola) -->
+  <!-- Arranque / cámara no disponible (mismo lenguaje que la pantalla de espera) -->
+  <section id="start" class="start hidden">
+    <img class="idle-logo" src="assets/ui/logo-bf.svg" alt="Ben &amp; Frank" width="171.2" height="20" />
+    <h2 id="start-title" class="start-title" hidden></h2>
+    <p id="status" class="status" role="status"></p>
+    <button id="btn-cam" class="start-btn" type="button" hidden>
+      <img src="assets/ui/glasses-hint.svg" alt="" width="34" height="34" />
+      <span>Reintentar</span>
+    </button>
+    <input type="file" id="file" accept="image/*,video/*" hidden />
+  </section>
+
+  <!-- Debug (oculto: 3 toques en "Detección", tecla D o ?debug) -->
+  <div id="hud" class="dbg-glass mono" hidden></div>
+  <textarea id="note" class="dbg-glass dbg-only" placeholder="Nota para Claude…" spellcheck="false"></textarea>
+  <div id="toast" class="toast" role="status"></div>
+  <section id="modal" class="modal hidden">
+    <div class="modal-card dbg-glass">
+      <h2 id="modal-title"></h2>
+      <textarea id="modal-text" class="mono" spellcheck="false"></textarea>
+      <div class="row">
+        <button id="modal-ok" class="chip solid">Aplicar</button>
+        <button id="modal-cancel" class="chip">Cerrar</button>
+      </div>
+    </div>
+  </section>
+
+  <video id="video" playsinline muted autoplay></video>
+  <script type="module" src="src/main.js?v=0.9.8"></script>
+</body>
+</html>

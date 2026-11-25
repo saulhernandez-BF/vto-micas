@@ -4,7 +4,8 @@ import { LensDetector } from './lensDetector.js';
 import { LightEstimator } from './light.js';
 import { Renderer } from './renderer.js';
 import { Debug } from './debug.js';
-import { loadConfig, saveConfig, resetConfig, merge, applyPreset, PRESETS, PHOTO_TARGETS, VERSION } from './config.js';
+import { loadConfig, saveConfig, resetConfig, merge, applyPreset, PRESETS, PHOTO_TARGETS, VERSION, isPolarized } from './config.js';
+import { PAIS } from './pais.js';
 import { hexToRgb } from './math.js';
 import { loadCatalog } from './catalog.js';
 import { frameCache } from './frameCache.js';
@@ -15,6 +16,14 @@ import { Tuner, applyTunes } from './tune.js';
 
 const $ = (id) => document.getElementById(id);
 const cfg = loadConfig();
+// Mica guardada que no existe en este país (p. ej. probaste México y luego Chile en el mismo equipo) → la del país
+if (!PRESETS.some((p) => p.id === cfg.lens.preset)) applyPreset(cfg, PRESETS.find((p) => p.id === PAIS.defaultPreset) || PRESETS[0]);
+// Textos y controles por país (src/pais.js)
+document.documentElement.dataset.pais = PAIS.id;
+for (const g of ['pol', 'tint']) { $(`lens-${g}-title`).textContent = PAIS.textos[g].titulo; $(`lens-${g}-sub`).textContent = PAIS.textos[g].sub; $(`sw-${g}`).setAttribute('aria-label', PAIS.textos[g].titulo); }
+if (!PAIS.fotoentintado) $('uv').style.display = 'none';
+/** Micas permitidas para el modelo elegido (sólo las que existen en este país); null = todas */
+function modelTints(m) { const t = m?.tints?.filter((id) => PRESETS.some((p) => p.id === id)); return t?.length ? t : null; }
 const DEFAULTS_DETECT = { rays: 64, samples: 32 }; // valores base (modo normal y ligero)
 const canvas = $('view');
 const ctx = canvas.getContext('2d');
@@ -48,7 +57,27 @@ function toast(msg) {
 const setStatus = (m) => ($('status').textContent = m);
 
 function isMirrored() { return cfg.view.mirror && app.kind === 'camera' && app.facing === 'user'; }
-function applyView() { canvas.classList.toggle('mirrored', isMirrored()); }
+// Zoom: la cámara frontal del iPad mini es gran angular y deforma la cara de cerca. Con zoom la persona se ve
+// del mismo tamaño parada más lejos (menos deformación). Se usa el zoom de la cámara si lo ofrece (sin perder
+// resolución: recorta del sensor de 12 MP); si no, un acercamiento en pantalla del video.
+function applyView() {
+  canvas.classList.toggle('mirrored', isMirrored());
+  const z = app.kind === 'camera' ? app.cssZoom || 1 : 1;
+  canvas.style.transform = `${isMirrored() ? 'scaleX(-1) ' : ''}${z !== 1 ? `scale(${z})` : ''}`.trim();
+}
+async function applyZoom(track) {
+  const want = cfg.view.zoom || 1;
+  app.hwZoom = 1; app.cssZoom = want;
+  try {
+    const caps = track?.getCapabilities?.();
+    if (caps?.zoom && want > 1) {
+      const z = Math.min(caps.zoom.max, Math.max(caps.zoom.min, want));
+      await track.applyConstraints({ advanced: [{ zoom: z }] });
+      app.hwZoom = z; app.cssZoom = want / z;
+    }
+  } catch (e) { console.warn('[VTO] zoom de cámara no disponible', e); }
+  applyView();
+}
 
 async function copyText(text, label) {
   try { await navigator.clipboard.writeText(text); toast(`${label} copiado al portapapeles`); }
@@ -136,10 +165,9 @@ basis.configure(cfg.tracking);
 
 // ───────────────────────── Micas (UI de producto — Figma: Polarizadas | Entintadas)
 function renderSwatches() {
-  const groups = { Polarizadas: $('sw-pol'), Fotoentintadas: $('sw-tint') };
-  if (!groups.Polarizadas.childElementCount) {
+  if (!$('sw-pol').childElementCount && !$('sw-tint').childElementCount) {
     for (const p of PRESETS) {
-      const host = groups[p.group];
+      const host = isPolarized(p) ? $('sw-pol') : $('sw-tint');
       if (!host) continue;
       const b = document.createElement('button');
       b.className = 'swatch'; b.dataset.id = p.id; b.setAttribute('role', 'radio');
@@ -150,7 +178,7 @@ function renderSwatches() {
       host.appendChild(b);
     }
   }
-  const allowed = cfg.detect.model === 'catalog' && detector.catalogModel?.tints;
+  const allowed = cfg.detect.model === 'catalog' && modelTints(detector.catalogModel);
   for (const b of document.querySelectorAll('.swatch')) {
     b.setAttribute('aria-checked', String(b.dataset.id === cfg.lens.preset));
     b.hidden = !!allowed && !allowed.includes(b.dataset.id);
@@ -172,6 +200,7 @@ function renderUV() {
 function setOutdoor(v) { if (v && !cfg.lens.outdoor) analytics.track('outdoor'); cfg.lens.outdoor = v; onConfigChange(); }
 // Todo el switch es un solo botón: cada toque alterna Interior ↔ Exterior
 $('uv').onclick = () => {
+  if (!PAIS.fotoentintado) return;
   if (cfg.lens.outdoor) { setOutdoor(false); return; }
   // Si traen una polarizada, pasar a exterior no cambia nada: elegimos la primera fotoentintada
   if (!photoPreset()) { const p = PRESETS.find((x) => x.photo); if (p) applyPreset(cfg, p); }
@@ -216,8 +245,9 @@ function selectModel(id) {
   clearAuto();
   if (m) { cfg.detect.model = 'catalog'; analytics.track('model_pick', { id: m.id }); }
   else if (cfg.detect.model === 'catalog') cfg.detect.model = 'auto';
-  if (m?.tints && !m.tints.includes(cfg.lens.preset)) {
-    const p = PRESETS.find((x) => x.id === m.tints[0]);
+  const mt = modelTints(m);
+  if (mt && !mt.includes(cfg.lens.preset)) {
+    const p = PRESETS.find((x) => x.id === mt[0]);
     if (p) applyPreset(cfg, p);
   }
   detector.reset();
@@ -366,10 +396,12 @@ function framingGuide() {
   const now = performance.now();
   let want = null;
   if (app.B && app.lm && app.kind === 'camera' && cfg.guide.enabled) {
-    const vw = innerWidth, vh = innerHeight, k = Math.max(vw / app.W, vh / app.H);
+    const vw = innerWidth, vh = innerHeight, k = Math.max(vw / app.W, vh / app.H), z = app.cssZoom || 1;
     const ox = (vw - app.W * k) / 2, oy = (vh - app.H * k) / 2;
-    const r = (app.B.s * k) / vw;
-    const lm = app.lm, cx = ((lm[33][0] + lm[263][0]) / 2) * k + ox, cy = ((lm[33][1] + lm[263][1]) / 2) * k + oy;
+    const r = (app.B.s * k * z) / vw;
+    const lm = app.lm;
+    const cx = vw / 2 + (((lm[33][0] + lm[263][0]) / 2) * k + ox - vw / 2) * z;
+    const cy = vh / 2 + (((lm[33][1] + lm[263][1]) / 2) * k + oy - vh / 2) * z;
     if (r < cfg.guide.minRel) want = ['Acércate un poco', 'a la pantalla'];
     else if (r > cfg.guide.maxRel) want = ['Aléjate un poco', 'de la pantalla'];
     else if (Math.abs(cx - vw / 2) > vw * cfg.guide.centerTol || cy < vh * 0.18 || cy > vh * 0.62) want = ['Colócate al centro', 'de la pantalla'];
@@ -418,6 +450,8 @@ function updateHint() {
   app.guide = !!guide;
   if (!app.B || app.before || pickerOpen || app.idle) setHint(null);
   else if (guide) setHint(guide, { pulse: false });
+  else if (catalogMode && !tpl.locked && !detector.bridgeOn)
+    setHint(['Ponte el armazón', 'para ajustar la mica'], { calibrating: true, prog: 0 });
   else if (catalogMode && !tpl.locked)
     setHint(tpl.frontal ? ['Mantén la vista', 'al frente…'] : ['Voltea a ver de frente', 'a la cámara'], { calibrating: true, prog: tpl.progress });
   else if (suggest) setHint(['Para un ajuste perfecto', 'elige tu modelo'], { pulse: true });
@@ -486,6 +520,7 @@ async function startCamera() {
     setStatus(''); $('start-title').hidden = true; $('btn-cam').hidden = true;
     setSource(video, 'camera');
     armVideoFrames(stream);
+    applyZoom(stream.getVideoTracks()[0]);
     stream.getVideoTracks()[0]?.addEventListener('ended', () => { if (app.stream === stream) { app.stream = null; camFail('ended'); } });
   } catch (e) {
     console.error(e);
@@ -527,6 +562,7 @@ async function loadUrl(url) {
   }
 }
 window.__vto.loadUrl = loadUrl;
+window.__vto.applyZoom = () => applyZoom(app.stream?.getVideoTracks()[0]);
 window.__vto.selectModel = (id) => selectModel(id);
 window.__vto.selectSize = (t) => selectSize(t);
 window.__vto.report = buildReport;
@@ -554,7 +590,7 @@ function setBefore(v) {
   b.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') setBefore(false); });
 }
 function openUsage() {
-  const names = Object.fromEntries([...PRESETS.map((p) => [p.id, (p.name || p.id) + (p.photo ? '' : ' polarizada')]), ...catalog.models.map((m) => [m.id, m.name])]);
+  const names = Object.fromEntries([...PRESETS.map((p) => [p.id, (p.name || p.id) + (isPolarized(p) ? ' polarizada' : '')]), ...catalog.models.map((m) => [m.id, m.name])]);
   openReport(analytics, names);
 }
 
@@ -710,7 +746,7 @@ function frame() {
   }
   const canCompare = app.before || (app.B && app.tintA > 0.5);
   if (canCompare !== app.canCompare) { app.canCompare = canCompare; $('compare').classList.toggle('off', !canCompare); }
-  renderer.draw(ctx, src, W, H, { cfg, B: app.B, light: light.s, shapes: app.shapes, tint, lite: app.lite, frameN: app.frameN, tintColor: tintColor(), alpha: app.tintA, polarized: !photoPreset() });
+  renderer.draw(ctx, src, W, H, { cfg, B: app.B, light: light.s, shapes: app.shapes, tint, lite: app.lite, frameN: app.frameN, tintColor: tintColor(), alpha: app.tintA, polarized: isPolarized(PRESETS.find((p) => p.id === cfg.lens.preset)) });
   app.ms.render = performance.now() - t2;
 
   // Capa 3 · debug
@@ -726,7 +762,7 @@ function frame() {
     app.cnt = { t: 0, d: 0, r: 0 };
     app.perfT = now;
     PERF.textContent = `v${VERSION} · ${app.rates || ''}${app.lite ? ' (ligero)' : ''}${app.hq ? ' (HQ)' : ''}${app.idle ? ' (espera)' : ''} · ${app.W}×${app.H} · track ${app.ms.track.toFixed(1)} · detect ${app.ms.detect.toFixed(1)} · render ${app.ms.render.toFixed(1)} ms · ${tracker.delegate || ''}`
-      + (detector.bridgeRaw ? `\narmazón ${(detector.bridge || 0).toFixed(2)}${detector.bridgeOn ? ' ✓' : ''} (puente ${detector.bridgeRaw.bScore.toFixed(2)} · sienes ${detector.bridgeRaw.temple.toFixed(2)}; prende ${cfg.detect.frameOn}) · aro ${detector.glassesScore.toFixed(2)}${detector.detected ? ' ✓' : ''} · tinte ${(app.tintA || 0).toFixed(2)}` : '');
+      + (detector.bridgeRaw ? `\narmazón ${(detector.bridge || 0).toFixed(2)}${detector.bridgeOn ? ' ✓' : ''} (puente ${detector.bridgeRaw.bScore.toFixed(2)} · sienes ${detector.bridgeRaw.temple.toFixed(2)}; prende ${cfg.detect.model === 'catalog' && detector.catalogModel ? cfg.detect.frameOnModel : cfg.detect.frameOn}) · aro ${detector.glassesScore.toFixed(2)}${detector.detected ? ' ✓' : ''} · tinte ${(app.tintA || 0).toFixed(2)}` : '');
   }
 }
 
@@ -741,6 +777,24 @@ function frame() {
   mq.addEventListener?.('change', upd); upd();
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('[VTO] sw', e));
+/** Deja sólo los modelos (y tallas) que se venden en el país. Si sólo queda una talla se muestra esa (la elige sola). */
+async function filterCountry(models, url) {
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error('No se pudo leer ' + url);
+  const sel = (await res.json()).modelos || {};
+  const out = [];
+  for (const m of models) {
+    const t = sel[m.id];
+    if (!t) continue;
+    if (m.sizes?.length && t.length) {
+      const sizes = m.sizes.filter((s) => t.includes(s.talla));
+      if (sizes.length) m.sizes = sizes;
+    }
+    out.push(m);
+  }
+  return out;
+}
+
 (async () => {
   cfg.lens.outdoor = false; // cada arranque empieza en interior
   if (new URLSearchParams(location.search).has('debug')) cfg.debug.panel = true;
@@ -753,6 +807,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
     await tracker.init(setStatus);
     try {
       catalog.models = await loadCatalog();
+      if (PAIS.catalogo) catalog.models = await filterCountry(catalog.models, PAIS.catalogo);
       applyTunes(catalog.models);
       matcher.setCatalog(catalog.models);
       const m = catalog.models.find((x) => x.id === cfg.catalog.modelId);

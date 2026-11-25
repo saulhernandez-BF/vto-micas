@@ -4,6 +4,7 @@
 // uso de Exterior, de "Antes" y modelo elegido / reconocido. Sin imágenes ni datos personales.
 import { send, getStore, setStore, remoteEnabled } from './remote.js';
 import { VERSION } from './config.js';
+import { PAIS } from './pais.js';
 
 const KEY = 'vto-micas:analytics:v1';
 const MAX_VISITS = 8000;
@@ -113,17 +114,17 @@ export class Analytics {
 
   csv() {
     const store = getStore();
-    const head = ['fecha', 'hora', 'tienda', 'dispositivo', 'duracion_s', 'con_mica_s', 'colores', 'cambios', 'exterior', 'antes', 'modelo_elegido', 'modelo_auto', 'segundos_por_color'];
+    const head = ['fecha', 'hora', 'pais', 'tienda', 'dispositivo', 'duracion_s', 'con_mica_s', 'colores', 'cambios', 'exterior', 'antes', 'modelo_elegido', 'modelo_auto', 'segundos_por_color'];
     const esc = (x) => { const s = String(x ?? ''); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
     const rows = this.visits.map((v) => {
       const d = new Date(v.t);
-      return [day(v.t), d.toTimeString().slice(0, 8), store, this.device, v.dur, v.tintSec, v.colors.join(' > '), v.picks, v.outdoor, v.before, v.model, v.auto,
+      return [day(v.t), d.toTimeString().slice(0, 8), PAIS.id, store, this.device, v.dur, v.tintSec, v.colors.join(' > '), v.picks, v.outdoor, v.before, v.model, v.auto,
         Object.entries(v.dwell).map(([k, s]) => `${k}:${s}`).join(' ')].map(esc).join(',');
     });
     return '﻿' + [head.join(','), ...rows].join('\n');
   }
 
-  json() { return JSON.stringify({ app: 'vto-micas', store: getStore(), device: this.device, exported: new Date().toISOString(), visits: this.visits }, null, 1); }
+  json() { return JSON.stringify({ app: 'vto-micas', pais: PAIS.id, store: getStore(), device: this.device, exported: new Date().toISOString(), visits: this.visits }, null, 1); }
 }
 
 /** Vista de reporte (?reporte o desde el debug). names: id → nombre legible. */
@@ -144,7 +145,7 @@ export function openReport(an, names = {}) {
     el.innerHTML = `
       <header class="report-head">
         <div><h2>Reporte de uso</h2>
-          <p>Tienda <input class="store-in" data-store value="${s.store}" placeholder="nombre-de-tienda" spellcheck="false" autocapitalize="off"> · dispositivo ${s.device}</p>
+          <p>${PAIS.nombre} · tienda <input class="store-in" data-store value="${s.store}" placeholder="nombre-de-tienda" spellcheck="false" autocapitalize="off"> · dispositivo ${s.device}</p>
           <p>${remoteEnabled() ? (s.pending ? `${s.pending} visitas por enviar a la hoja central` : 'Todo enviado a la hoja central') : 'Datos anónimos guardados sólo en este equipo'}</p></div>
         <button class="icon-btn" data-a="close" aria-label="Cerrar"><img src="assets/ui/close.svg" alt="" width="24" height="24"></button>
       </header>
@@ -154,7 +155,7 @@ export function openReport(an, names = {}) {
       <div class="kpis">
         ${kpi(s.visits, 'visitas')}${kpi(Math.round(s.medianSec) + ' s', 'duración mediana')}
         ${kpi(Math.round(s.withGlassesPct) + ' %', 'con lentes puestos')}${kpi(s.avgColors.toFixed(1), 'colores por visita')}
-        ${kpi(Math.round(s.outdoorPct) + ' %', 'probó Exterior')}${kpi(Math.round(s.beforePct) + ' %', 'usó Antes')}
+        ${PAIS.fotoentintado ? kpi(Math.round(s.outdoorPct) + ' %', 'probó Exterior') : ''}${kpi(Math.round(s.beforePct) + ' %', 'usó Antes')}
         ${kpi(Math.round(s.autoPct) + ' %', 'modelo reconocido')}${kpi(Math.round(s.manualPct) + ' %', 'eligió modelo')}
       </div>
       <h3>Tiempo con cada mica</h3>${bars(s.dwell, ' s', (v) => Math.round(v))}

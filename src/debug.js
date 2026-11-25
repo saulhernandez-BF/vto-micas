@@ -117,6 +117,8 @@ export class Debug {
     fd.add(c.detect, 'glassesThreshold', 0, 1, 0.01).name('Umbral “hay lentes”');
     fd.add(c.detect, 'frameOn', 0.5, 12, 0.1).name('Armazón: prende (puente/varillas)');
     fd.add(c.detect, 'frameOff', 0.5, 12, 0.1).name('Armazón: apaga');
+    fd.add(c.detect, 'frameOnModel', 0.5, 12, 0.1).name('Armazón con modelo: prende');
+    fd.add(c.detect, 'frameTau', 0.2, 3, 0.1).name('Armazón: promedio (s)');
     fd.add(c.detect, 'rimContrast', 0.03, 0.5, 0.005).name('Contraste mín. aro');
     fd.add(c.detect, 'autoPolarity').name('Auto: probar aro fino');
     fd.add(c.detect, 'rimContrastLine', 0.02, 0.3, 0.005).name('Contraste mín. aro fino');
@@ -161,6 +163,7 @@ export class Debug {
 
     const fv = g.addFolder('Vista / overlays');
     fv.add(c.view, 'mirror').name('Espejo (selfie)');
+    fv.add(c.view, 'zoom', 1, 2, 0.05).name('Zoom cámara (menos deformación)').onChange(() => window.__vto?.applyZoom?.());
     fv.add(c.view, 'showTint').name('Mostrar tinte');
     fv.add(c.debug, 'hud').name('HUD métricas');
     fv.add(c.debug, 'landmarks').name('Landmarks');

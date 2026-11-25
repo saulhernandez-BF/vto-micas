@@ -1,5 +1,6 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
-export const VERSION = '0.9.4';
+import { PAIS } from './pais.js';
+export const VERSION = '0.9.8';
 // Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
 export const REMOTE_URL = 'https://script.google.com/macros/s/AKfycbyPvqpy4w7FGJdoeyv9uiuFAWJc5VqALXZBugLimZMUqeIU2FZ81lEhLA3s1xzhMQ4/exec';
 
@@ -83,8 +84,10 @@ export const DEFAULTS = {
     wrapDeg: 13.5,           // curvatura del frente hacia la sien
     procWidth: 360,
     renderWithoutGlasses: false, // sin lentes detectados no se pinta mica
-    frameOn: 3.5,         // evidencia de armazón (puente/varillas). Medido en vivo (cámara Mac, 15-oct): sin lentes ≈1.1–1.4, con lentes 15–20
-    frameOff: 2.5,
+    // Evidencia de armazón (puente/varillas). Medido: sin lentes ≈0.8–1.4; acetato translúcido con poca luz ≈2.2–2.5
+    // (fotos de estudio 6–9); aro oscuro/metal 15–20. Con modelo elegido se usa un umbral más bajo.
+    frameOn: 2.0,
+    frameOff: 1.6, frameOnModel: 1.6, frameOffModel: 1.3, frameTau: 0.9,
     lock: false,
   },
   // Forma base en unidades locales (1 = distancia entre comisuras externas ≈ 9 cm)
@@ -97,7 +100,7 @@ export const DEFAULTS = {
   guide: { enabled: true, minRel: 0.12, maxRel: 0.4, centerTol: 0.15, delaySec: 0.8, idleSec: 6, idleTrackHz: 5 },
   prior: { cx: 0.37, cy: 0.0, a: 0.27, b: 0.2, n: 2.6 },
   tracking: { minCutoff: 1.5, beta: 0.8, dCutoff: 1.0 },
-  view: { mirror: true, showTint: true },
+  view: { mirror: true, showTint: true, zoom: 1.3 }, // zoom: la persona se para más lejos → menos deformación de gran angular
   debug: {
     panel: false, hud: true,
     landmarks: false, basis: true, prior: false, band: true, rays: false,
@@ -113,7 +116,7 @@ export const DEFAULTS = {
 // polarizada equivalente (~25–30 % de transmitancia, típico de un fotocromático activado).
 export const PHOTO_TARGETS = { cafe: '#8e867d', gris: '#767676' };
 
-export const PRESETS = [
+const ALL_PRESETS = [
   { id: 'pol-verde', group: 'Polarizadas', name: 'Verde', color: '#3c453d', swatch: '#42674E', density: 1, gradient: 0, mirror: 0 },
   { id: 'pol-cafe', group: 'Polarizadas', name: 'Café', color: '#685e51', swatch: '#6C5F4C', density: 1, gradient: 0, mirror: 0 },
   { id: 'pol-gris', group: 'Polarizadas', name: 'Gris', color: '#494949', swatch: '#545A5C', density: 1, gradient: 0, mirror: 0 },
@@ -125,9 +128,17 @@ export const PRESETS = [
   { id: 'caleta', group: 'Fotoentintadas', name: 'Caleta', color: '#a4b2c1', swatch: '#B2DFFE', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
   { id: 'mermejita', group: 'Fotoentintadas', name: 'Mermejita', color: '#d9ddb5', swatch: '#9FB400', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
   { id: 'miramar', group: 'Fotoentintadas', name: 'Miramar', color: '#9e9cc2', swatch: '#AA86D9', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
+  // Chile · entintados (sin fotoentintado). Medidos de la foto de Zul (3 micas sobre pared blanca): mica ÷ pared.
+  { id: 'cl-naranja', group: 'Entintadas', name: 'Naranja', color: '#c18e5a', swatch: '#C8874A', density: 1, gradient: 0, mirror: 0 },
+  { id: 'cl-azul', group: 'Entintadas', name: 'Azul', color: '#86aecc', swatch: '#6F9CC0', density: 1, gradient: 0, mirror: 0 },
+  { id: 'cl-rojo', group: 'Entintadas', name: 'Rojo', color: '#e38e9d', swatch: '#D7737F', density: 1, gradient: 0, mirror: 0 },
 ];
+// Sólo las micas que se venden en el país (src/pais.js), en ese orden
+export const PRESETS = PAIS.presets.map((id) => ALL_PRESETS.find((p) => p.id === id)).filter(Boolean);
+export const isPolarized = (p) => p?.group === 'Polarizadas';
+{ const p = PRESETS.find((x) => x.id === PAIS.defaultPreset) || PRESETS[0]; DEFAULTS.lens.preset = p.id; DEFAULTS.lens.color = p.color; }
 
-const KEY = 'vto-micas:config:v12';
+const KEY = 'vto-micas:config:v14' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
 
 export function merge(base, over) {
   if (!over || typeof over !== 'object') return base;

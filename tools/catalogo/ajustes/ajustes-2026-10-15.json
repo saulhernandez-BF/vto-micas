@@ -1,0 +1,868 @@
+{
+ "app": "vto-micas",
+ "kind": "tune",
+ "exported": "2026-10-15T22:35:06.918Z",
+ "models": [
+  {
+   "id": "akira",
+   "talla": "",
+   "name": "Akira",
+   "k": 1.215,
+   "dy": 3.25,
+   "dbx": -1.25,
+   "status": "listo",
+   "ev": {
+    "p10": 1.43,
+    "med": 4.161,
+    "n": 952
+   },
+   "t": 1792099627665
+  },
+  {
+   "id": "agnes",
+   "talla": "",
+   "name": "Agnes",
+   "k": 1.12,
+   "dy": 0,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 0.965,
+    "med": 1.284,
+    "n": 16
+   }
+  },
+  {
+   "id": "abbas",
+   "talla": "",
+   "name": "Abbas",
+   "k": 1.12,
+   "dy": 0,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 1.149,
+    "med": 1.349,
+    "n": 57
+   }
+  },
+  {
+   "id": "aldous",
+   "talla": "",
+   "name": "Aldous",
+   "k": 1.01,
+   "dy": -4.25,
+   "dbx": -4,
+   "status": "listo",
+   "ev": {
+    "p10": 7.339,
+    "med": 7.973,
+    "n": 35
+   },
+   "t": 1792099593760
+  },
+  {
+   "id": "artigas",
+   "talla": "XG",
+   "name": "Artigas",
+   "k": 1.15,
+   "dy": -5.5,
+   "dbx": 2.25,
+   "status": "listo",
+   "ev": {
+    "p10": 1.128,
+    "med": 9.982,
+    "n": 1810
+   },
+   "t": 1792099795551
+  },
+  {
+   "id": "artigas",
+   "talla": "XXG",
+   "name": "Artigas",
+   "k": 1.14,
+   "dy": 0,
+   "dbx": 4,
+   "status": "listo",
+   "t": 1792099731176,
+   "ev": {
+    "p10": 2.62,
+    "med": 15.343,
+    "n": 883
+   }
+  },
+  {
+   "id": "barb",
+   "talla": "G",
+   "name": "Barb",
+   "k": 0.93,
+   "dy": -0.5,
+   "dbx": -3.25,
+   "status": "listo",
+   "t": 1792099883145,
+   "ev": {
+    "p10": 2.01,
+    "med": 18.251,
+    "n": 952
+   }
+  },
+  {
+   "id": "barb",
+   "talla": "XG",
+   "name": "Barb",
+   "k": 1,
+   "dy": 0,
+   "dbx": 0,
+   "status": "listo",
+   "t": 1792099899231,
+   "ev": {
+    "p10": 1.494,
+    "med": 15.198,
+    "n": 462
+   }
+  },
+  {
+   "id": "benny",
+   "talla": "",
+   "name": "Benny",
+   "k": 1.105,
+   "dy": -4.75,
+   "dbx": 2.75,
+   "status": "listo",
+   "t": 1792099949804,
+   "ev": {
+    "p10": 1.336,
+    "med": 8.801,
+    "n": 1517
+   }
+  },
+  {
+   "id": "bill-ventana",
+   "talla": "",
+   "name": "Bill Ventana",
+   "k": 1.095,
+   "dy": -1.75,
+   "dbx": 0,
+   "status": "listo",
+   "t": 1792099986094,
+   "ev": {
+    "p10": 1.661,
+    "med": 17.303,
+    "n": 766
+   }
+  },
+  {
+   "id": "billie",
+   "talla": "G",
+   "name": "Billie",
+   "k": 1.07,
+   "dy": -4.5,
+   "dbx": 3.25,
+   "status": "listo",
+   "t": 1792100112853,
+   "ev": {
+    "p10": 1.955,
+    "med": 2.962,
+    "n": 1538
+   }
+  },
+  {
+   "id": "billie",
+   "talla": "XXG",
+   "name": "Billie",
+   "k": 1.07,
+   "dy": 0,
+   "dbx": 0,
+   "status": "listo",
+   "t": 1792100178602,
+   "ev": {
+    "p10": 1.387,
+    "med": 8.973,
+    "n": 768
+   }
+  },
+  {
+   "id": "billie-reform",
+   "talla": "",
+   "name": "Billie ReForm",
+   "k": 1.045,
+   "dy": 0.75,
+   "dbx": -1,
+   "status": "listo",
+   "t": 1792100248677,
+   "ev": {
+    "p10": 0.985,
+    "med": 1.151,
+    "n": 37
+   }
+  },
+  {
+   "id": "c-3po",
+   "talla": "",
+   "name": "C-3PO",
+   "k": 1.105,
+   "dy": 3.25,
+   "dbx": 3,
+   "status": "listo",
+   "t": 1792100509381,
+   "ev": {
+    "p10": 1.272,
+    "med": 1.576,
+    "n": 41
+   }
+  },
+  {
+   "id": "coen",
+   "talla": "",
+   "name": "Coen",
+   "k": 1.06,
+   "dy": -5.25,
+   "dbx": -2,
+   "status": "listo",
+   "ev": {
+    "p10": 2.602,
+    "med": 2.797,
+    "n": 11
+   },
+   "t": 1792101999072
+  },
+  {
+   "id": "cortazar",
+   "talla": "",
+   "name": "Cortazar",
+   "k": 1,
+   "dy": -3,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.709,
+    "med": 3.792,
+    "n": 11
+   }
+  },
+  {
+   "id": "cristina",
+   "talla": "",
+   "name": "Cristina",
+   "k": 1.14,
+   "dy": 1.75,
+   "dbx": 5,
+   "status": "listo",
+   "ev": {
+    "p10": 3.048,
+    "med": 3.496,
+    "n": 13
+   },
+   "t": 1792101077114
+  },
+  {
+   "id": "dafna",
+   "talla": "M",
+   "name": "Dafna",
+   "k": 1.03,
+   "dy": 1.25,
+   "dbx": -5.75,
+   "status": "listo",
+   "t": 1792101193019,
+   "ev": {
+    "p10": 6.995,
+    "med": 8.342,
+    "n": 30
+   }
+  },
+  {
+   "id": "dafna",
+   "talla": "G",
+   "name": "Dafna",
+   "k": 1.07,
+   "dy": 2.25,
+   "dbx": 0,
+   "status": "listo",
+   "ev": {
+    "p10": 3.165,
+    "med": 3.545,
+    "n": 17
+   },
+   "t": 1792101331821
+  },
+  {
+   "id": "dafna",
+   "talla": "XG",
+   "name": "Dafna",
+   "k": 1.07,
+   "dy": 2.25,
+   "dbx": 0,
+   "status": "listo",
+   "ev": {
+    "p10": 6.634,
+    "med": 7.676,
+    "n": 448
+   },
+   "t": 1792101366376
+  },
+  {
+   "id": "dave",
+   "talla": "",
+   "name": "Dave",
+   "k": 1,
+   "dy": -5.75,
+   "dbx": -2.75,
+   "status": "listo",
+   "t": 1792101456688,
+   "ev": {
+    "p10": 3.267,
+    "med": 3.334,
+    "n": 12
+   }
+  },
+  {
+   "id": "star-wars",
+   "talla": "",
+   "name": "Darth Vader",
+   "k": 1.105,
+   "dy": 0,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 3.159,
+    "med": 3.291,
+    "n": 12
+   }
+  },
+  {
+   "id": "dafna-titan",
+   "talla": "",
+   "name": "Dafna Titán",
+   "k": 1.115,
+   "dy": -1.5,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.985,
+    "med": 3.367,
+    "n": 17
+   }
+  },
+  {
+   "id": "clark",
+   "talla": "",
+   "name": "Clark",
+   "k": 1.065,
+   "dy": -1.75,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.576,
+    "med": 3.59,
+    "n": 13
+   }
+  },
+  {
+   "id": "chewie",
+   "talla": "",
+   "name": "Chewie",
+   "k": 1.055,
+   "dy": 0,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.808,
+    "med": 3.388,
+    "n": 16
+   }
+  },
+  {
+   "id": "desmond",
+   "talla": "",
+   "name": "Desmond",
+   "k": 1.12,
+   "dy": -3.25,
+   "dbx": 3.5,
+   "status": "listo",
+   "t": 1792101737617,
+   "ev": {
+    "p10": 2.719,
+    "med": 3.025,
+    "n": 14
+   }
+  },
+  {
+   "id": "dexter",
+   "talla": "",
+   "name": "Dexter",
+   "k": 1.045,
+   "dy": 3,
+   "dbx": 0,
+   "status": "listo",
+   "t": 1792101802458,
+   "ev": {
+    "p10": 3.463,
+    "med": 3.618,
+    "n": 10
+   }
+  },
+  {
+   "id": "dwight",
+   "talla": "",
+   "name": "Dwight",
+   "k": 1,
+   "dy": -0.5,
+   "dbx": -1.75,
+   "status": "listo",
+   "t": 1792101863603,
+   "ev": {
+    "p10": 3.145,
+    "med": 3.238,
+    "n": 10
+   }
+  },
+  {
+   "id": "egon",
+   "talla": "",
+   "name": "Egon",
+   "k": 1.03,
+   "dy": 0.75,
+   "dbx": -1.5,
+   "status": "listo",
+   "t": 1792101899485,
+   "ev": {
+    "p10": 1.016,
+    "med": 1.314,
+    "n": 23
+   }
+  },
+  {
+   "id": "frank",
+   "talla": "",
+   "name": "Frank",
+   "k": 1.105,
+   "dy": 0.25,
+   "dbx": 0,
+   "status": "listo",
+   "ev": {
+    "p10": 2.604,
+    "med": 2.931,
+    "n": 14
+   },
+   "t": 1792102151934
+  },
+  {
+   "id": "fran-lucho",
+   "talla": "",
+   "name": "Fran x Lucho Martinez",
+   "k": 1.075,
+   "dy": -2.5,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 1.093,
+    "med": 1.212,
+    "n": 40
+   }
+  },
+  {
+   "id": "fran",
+   "talla": "",
+   "name": "Fran",
+   "k": 1.12,
+   "dy": -0.5,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 1.091,
+    "med": 1.416,
+    "n": 27
+   }
+  },
+  {
+   "id": "esquivel-titan",
+   "talla": "",
+   "name": "Esquivel Titán",
+   "k": 1.12,
+   "dy": -2.25,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 3.149,
+    "med": 4.117,
+    "n": 16
+   }
+  },
+  {
+   "id": "esquivel",
+   "talla": "G",
+   "name": "Esquivel",
+   "k": 1.105,
+   "dy": 0,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.724,
+    "med": 3.194,
+    "n": 19
+   }
+  },
+  {
+   "id": "desmond-acetato",
+   "talla": "",
+   "name": "Desmond (Acetato)",
+   "k": 1.1,
+   "dy": 2.25,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 3.253,
+    "med": 3.475,
+    "n": 12
+   }
+  },
+  {
+   "id": "esquivel",
+   "talla": "XG",
+   "name": "Esquivel",
+   "k": 1.105,
+   "dy": 0,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 1.205,
+    "med": 1.403,
+    "n": 37
+   }
+  },
+  {
+   "id": "franz",
+   "talla": "",
+   "name": "Franz",
+   "k": 1,
+   "dy": -4.75,
+   "dbx": 0,
+   "status": "listo",
+   "ev": {
+    "p10": 2.765,
+    "med": 2.99,
+    "n": 11
+   },
+   "t": 1792102184604
+  },
+  {
+   "id": "gabriela",
+   "talla": "",
+   "name": "Gabriela",
+   "k": 1.08,
+   "dy": 2.5,
+   "dbx": 0,
+   "status": "listo",
+   "t": 1792102238027,
+   "ev": {
+    "p10": 2.571,
+    "med": 3.296,
+    "n": 14
+   }
+  },
+  {
+   "id": "garwin",
+   "talla": "",
+   "name": "Garwin",
+   "k": 1.09,
+   "dy": -4.75,
+   "dbx": 3,
+   "status": "listo",
+   "t": 1792102305171,
+   "ev": {
+    "p10": 2.955,
+    "med": 3.095,
+    "n": 11
+   }
+  },
+  {
+   "id": "glenn",
+   "talla": "",
+   "name": "Glenn",
+   "k": 1.08,
+   "dy": -1,
+   "dbx": 1.75,
+   "status": "listo",
+   "t": 1792102393615,
+   "ev": {
+    "p10": 3.069,
+    "med": 3.958,
+    "n": 26
+   }
+  },
+  {
+   "id": "gloria",
+   "talla": "M",
+   "name": "Gloria",
+   "k": 1,
+   "dy": 0,
+   "dbx": 0,
+   "status": "no-esta",
+   "ev": {
+    "p10": 2.473,
+    "med": 2.809,
+    "n": 29
+   },
+   "t": 1792102504446
+  },
+  {
+   "id": "glorp",
+   "talla": "",
+   "name": "Glorp",
+   "k": 1.12,
+   "dy": 1.5,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.502,
+    "med": 2.726,
+    "n": 19
+   }
+  },
+  {
+   "id": "gloria",
+   "talla": "XG",
+   "name": "Gloria",
+   "k": 1.11,
+   "dy": 1,
+   "dbx": -2.5,
+   "status": "listo",
+   "t": 1792102520782,
+   "ev": {
+    "p10": 7.214,
+    "med": 8.17,
+    "n": 489
+   }
+  },
+  {
+   "id": "glorp-antimateria",
+   "talla": "",
+   "name": "Glorp Antimateria",
+   "k": 1,
+   "dy": -3,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.457,
+    "med": 2.989,
+    "n": 20
+   }
+  },
+  {
+   "id": "godard",
+   "talla": "",
+   "name": "Godard",
+   "k": 1.06,
+   "dy": 3,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.544,
+    "med": 2.828,
+    "n": 19
+   }
+  },
+  {
+   "id": "gretchen",
+   "talla": "",
+   "name": "Gretchen",
+   "k": 1.055,
+   "dy": -2,
+   "dbx": 2.5,
+   "status": "listo",
+   "ev": {
+    "p10": 2.36,
+    "med": 2.526,
+    "n": 26
+   },
+   "t": 1792102593842
+  },
+  {
+   "id": "guillermo",
+   "talla": "M",
+   "name": "Guillermo",
+   "k": 1.105,
+   "dy": -0.5,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.308,
+    "med": 2.586,
+    "n": 24
+   }
+  },
+  {
+   "id": "han-solo",
+   "talla": "",
+   "name": "Han Solo",
+   "k": 1.12,
+   "dy": 1.75,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.381,
+    "med": 2.577,
+    "n": 19
+   }
+  },
+  {
+   "id": "igor-i",
+   "talla": "",
+   "name": "Igor I",
+   "k": 1.12,
+   "dy": 3,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.388,
+    "med": 2.718,
+    "n": 15
+   }
+  },
+  {
+   "id": "guillermo",
+   "talla": "G",
+   "name": "Guillermo",
+   "k": 1.105,
+   "dy": -0.5,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 1.71,
+    "med": 2.27,
+    "n": 39
+   }
+  },
+  {
+   "id": "jaime",
+   "talla": "",
+   "name": "Jaime",
+   "k": 1.045,
+   "dy": 1.25,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.337,
+    "med": 2.472,
+    "n": 14
+   }
+  },
+  {
+   "id": "jarvis",
+   "talla": "",
+   "name": "Jarvis",
+   "k": 1.11,
+   "dy": 1.25,
+   "dbx": 0.5,
+   "status": "listo",
+   "t": 1792102678537,
+   "ev": {
+    "p10": 2.292,
+    "med": 2.442,
+    "n": 13
+   }
+  },
+  {
+   "id": "jocelyn",
+   "talla": "",
+   "name": "Jocelyn",
+   "k": 1.08,
+   "dy": -2.25,
+   "dbx": 8.5,
+   "status": "listo",
+   "t": 1792102742891,
+   "ev": {
+    "p10": 2.594,
+    "med": 2.63,
+    "n": 13
+   }
+  },
+  {
+   "id": "leia",
+   "talla": "",
+   "name": "Leia",
+   "k": 0.98,
+   "dy": 0,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.56,
+    "med": 2.632,
+    "n": 15
+   }
+  },
+  {
+   "id": "leon",
+   "talla": "XCH",
+   "name": "Leon",
+   "k": 1.135,
+   "dy": -8.5,
+   "dbx": 4.75,
+   "status": "listo",
+   "t": 1792102977236,
+   "ev": {
+    "p10": 1.219,
+    "med": 3.762,
+    "n": 1069
+   }
+  },
+  {
+   "id": "leonard",
+   "talla": "",
+   "name": "Leonard",
+   "k": 1.035,
+   "dy": 1.5,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 2.074,
+    "med": 2.446,
+    "n": 47
+   }
+  },
+  {
+   "id": "leone",
+   "talla": "",
+   "name": "Leone",
+   "k": 1.09,
+   "dy": -0.75,
+   "dbx": 0,
+   "status": "listo",
+   "ev": {
+    "p10": 10.994,
+    "med": 14.63,
+    "n": 56
+   },
+   "t": 1792103232856
+  },
+  {
+   "id": "lina",
+   "talla": "",
+   "name": "Lina",
+   "k": 0.95,
+   "dy": -2.5,
+   "dbx": -2.5,
+   "status": "listo",
+   "ev": {
+    "p10": 8.1,
+    "med": 11.321,
+    "n": 452
+   },
+   "t": 1792103390252
+  },
+  {
+   "id": "linda",
+   "talla": "",
+   "name": "Linda",
+   "k": 1.07,
+   "dy": -2.5,
+   "dbx": 0,
+   "status": "",
+   "ev": {
+    "p10": 0.973,
+    "med": 1.489,
+    "n": 1831
+   }
+  }
+ ]
+}

@@ -56,7 +56,15 @@ export class LensDetector {
     }));
   }
 
+  /** Recalibra el contorno de fábrica (altura/escala) sin perder la medida del iris. */
+  recalibrate() {
+    const iris = this.tpl.iris, mm = this.tpl.mmPerS;
+    this.tpl.reset(); this.tpl.iris = iris; this.tpl.mmPerS = mm;
+    this.recals = (this.recals || 0) + 1;
+  }
+
   reset() {
+    this.offT = 0;
     for (const s of this.sides) { s.acc.fill(1); s.accConf.fill(0); s.alt.fill(1); s.altT.fill(0); }
     this.glassesScore = 0;
     this.polScore = null;
@@ -141,6 +149,13 @@ export class LensDetector {
     // Modo catálogo: contorno exacto del modelo, solo se ajusta altura y escala fina
     if (catalog) {
       this.updateBridge(lm, d, dt, B);
+      // ¿Se quitó el armazón? (sin evidencia > 0.8 s). Al volver a ponerse uno —el mismo u otro— se recalibra
+      // solo, conservando la escala del iris (es de la persona, no del armazón).
+      if (!this.bridgeOn) this.offT = (this.offT || 0) + dt;
+      else {
+        if (this.offT > 0.8 && (this.tpl.frames || this.tpl.locked)) this.recalibrate();
+        this.offT = 0;
+      }
       this.tpl.update(this, B, lm, cfg, dt, tplModel);
       if (d.lensDepthAuto && this.noseDepth != null) this.tpl.updateTurn(this, B, cfg, tplModel, this.noseDepth);
       this.frameScore = this.glassesScore = this.tpl.conf;
@@ -348,9 +363,14 @@ export class LensDetector {
   /** Presencia de lentes por piezas del armazón (puente + varillas), suavizada y con histéresis. */
   updateBridge(lm, d, dt, B) {
     if (!lm || !B) return;
-    this.bridge = (this.bridge ?? 0) + (this.frameEvidence(lm, B) - (this.bridge ?? 0)) * (1 - Math.exp(-dt / 0.5));
-    if (!this.bridgeOn && this.bridge > d.frameOn) this.bridgeOn = true;
-    else if (this.bridgeOn && this.bridge < d.frameOff) this.bridgeOn = false;
+    // Promedio en el tiempo (τ ≈ 0.9 s): un acetato translúcido da evidencia moderada pero CONSTANTE; una cara
+    // sin lentes da picos sueltos. Promediar más tiempo separa mejor los dos casos.
+    this.bridge = (this.bridge ?? 0) + (this.frameEvidence(lm, B) - (this.bridge ?? 0)) * (1 - Math.exp(-dt / (d.frameTau || 0.5)));
+    // Con modelo elegido la persona ya nos dijo qué armazón trae: basta evidencia más débil
+    const chosen = d.model === 'catalog' && this.catalogModel;
+    const on = chosen ? d.frameOnModel : d.frameOn, off = chosen ? d.frameOffModel : d.frameOff;
+    if (!this.bridgeOn && this.bridge > on) this.bridgeOn = true;
+    else if (this.bridgeOn && this.bridge < off) this.bridgeOn = false;
   }
 
   frameEvidence(lm, B) {

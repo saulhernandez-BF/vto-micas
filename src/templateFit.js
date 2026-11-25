@@ -122,7 +122,9 @@ export class TemplateFitter {
     this.frontal = Math.abs(B.yaw) < (c.maxYaw * Math.PI) / 180 && Math.abs(B.pitch) < (c.maxPitch * Math.PI) / 180;
     if (!this.locked && this.frontal) this.measureScale(B, lm, cfg);
     else if (!this.mmPerS) this.measureScale(B, lm, cfg);
-    if (this.locked || !this.frontal) return;
+    // Sólo se calibra con el armazón puesto (evidencia de puente/varillas): mientras la persona se cambia de
+    // armazón no hay lentes en la cara y la calibración se iría a cualquier lado.
+    if (this.locked || !this.frontal || !det.bridgeOn) return;
 
     // Evaluamos un tercio de la rejilla por frame (round-robin) para no gastar CPU
     const rimless = !!model.rimless;

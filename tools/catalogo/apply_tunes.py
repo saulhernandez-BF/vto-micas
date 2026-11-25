@@ -4,7 +4,9 @@ Uso (desde tools/catalogo/):
   python3 apply_tunes.py <ajustes.json> [--reset id1,id2,...]
 
 - Modelos marcados "listo": se guarda su ajuste fino (tune, o tunes[talla] si se ajustó por talla)
-  y tuneOk=true (la herramienta ?ajuste ya no los pide).
+  y tuneOk=true (la herramienta ?ajuste ya no los pide). Por talla: tunesOk=[tallas aprobadas];
+  tuneOk sólo cuando todas las tallas están aprobadas.
+- Se puede correr varias veces (una por vuelta en tienda); cada vuelta sólo agrega/actualiza.
 - --reset: modelos con problemas → vuelven a valores de fábrica y quedan pendientes para otra vuelta.
 - "no-esta": no se toca.
 - Los modelos de excluir.txt se ignoran (y se quitan del catálogo).
@@ -31,7 +33,7 @@ def main():
     applied, cleared = [], []
     for mid in reset:
         m = by.get(mid)
-        if m: [m.pop(k, None) for k in ('tune', 'tunes', 'tuneOk')]; cleared.append(mid)
+        if m: [m.pop(k, None) for k in ('tune', 'tunes', 'tuneOk', 'tunesOk')]; cleared.append(mid)
     for r in rows:
         mid, talla = r['id'], r.get('talla') or ''
         m = by.get(mid)
@@ -41,10 +43,15 @@ def main():
         if talla:
             if nondefault: m.setdefault('tunes', {})[talla] = t
             else: m.get('tunes', {}).pop(talla, None)
+            ok = m.setdefault('tunesOk', [])
+            if talla not in ok: ok.append(talla)
+            # el modelo queda aprobado sólo cuando todas sus tallas lo están
+            tallas = [z.get('talla') for z in m.get('sizes', [])]
+            if tallas and all(z in ok for z in tallas): m['tuneOk'] = True
         else:
             if nondefault: m['tune'] = t
             else: m.pop('tune', None)
-        m['tuneOk'] = True
+            m['tuneOk'] = True
         applied.append(mid + (f'@{talla}' if talla else ''))
     json.dump(D, open(CAT, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print(f'modelos: {before} → {len(D["models"])} (excluidos: {", ".join(sorted(ex)) or "—"})')

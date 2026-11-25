@@ -1,6 +1,7 @@
 // Envío a la hoja central (Google Sheets vía Apps Script). La URL se configura en REMOTE_URL (config.js)
 // y cada tablet se identifica con su tienda (?tienda=polanco, se recuerda en el equipo).
 import { REMOTE_URL } from './config.js';
+import { PAIS } from './pais.js';
 
 const STORE_KEY = 'vto-micas:tienda';
 
@@ -20,7 +21,7 @@ export async function send(kind, payload) {
   if (!REMOTE_URL || !navigator.onLine) return false;
   try {
     await fetch(REMOTE_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ app: 'vto-micas', kind, store: getStore() || 'sin-tienda', ...payload }) });
+      body: JSON.stringify({ app: 'vto-micas', kind, pais: PAIS.id, store: getStore() || 'sin-tienda', ...payload }) });
     return true;
   } catch { return false; }
 }

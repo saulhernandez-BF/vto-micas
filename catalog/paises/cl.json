@@ -1,0 +1,110 @@
+{
+ "pais": "cl",
+ "fuente": "cl.csv",
+ "modelos": {
+  "abbas": [],
+  "agnes": [],
+  "akira": [],
+  "aldous": [],
+  "artigas": [
+   "XG",
+   "XXG"
+  ],
+  "barragan": [],
+  "benny": [],
+  "bill": [],
+  "bill-ventana": [],
+  "billie": [
+   "G",
+   "XXG"
+  ],
+  "billie-reform": [],
+  "c-3po": [],
+  "chewie": [],
+  "clark": [],
+  "coen": [],
+  "dafna": [
+   "M",
+   "G",
+   "XG"
+  ],
+  "dafna-titan": [],
+  "dave": [],
+  "egon": [],
+  "esquivel": [
+   "G",
+   "XG"
+  ],
+  "franz": [],
+  "gabriela": [],
+  "garcia": [],
+  "garwin": [],
+  "glenn": [],
+  "godard": [],
+  "gretchen": [],
+  "guillermo": [
+   "M",
+   "G"
+  ],
+  "han-solo": [],
+  "jaime": [],
+  "leia": [],
+  "leon": [
+   "XCH"
+  ],
+  "leonard": [],
+  "leone": [],
+  "linda": [],
+  "marcela": [
+   "M",
+   "G"
+  ],
+  "marcela-reform": [],
+  "marcie": [],
+  "maria": [],
+  "martin": [],
+  "mercedes": [],
+  "meryl": [],
+  "moleman": [],
+  "molina": [],
+  "murray": [],
+  "nadia-iii": [],
+  "nadia-iv": [],
+  "nadia-v": [],
+  "obi-wan": [],
+  "orozco": [
+   "CH",
+   "M"
+  ],
+  "parks": [
+   "M",
+   "G"
+  ],
+  "parks-caviar": [
+   "M"
+  ],
+  "r2-d2": [],
+  "renzo": [],
+  "rivera": [
+   "M"
+  ],
+  "roberto": [],
+  "robin": [
+   "G",
+   "XG"
+  ],
+  "robin-caviar": [
+   "G",
+   "XG"
+  ],
+  "romero": [],
+  "skywalker": [],
+  "star-wars": [],
+  "steven": [],
+  "testa": [],
+  "wong": [],
+  "yetta": [],
+  "yoda": [],
+  "yuri": []
+ }
+}

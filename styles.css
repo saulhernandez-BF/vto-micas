@@ -27,7 +27,7 @@ h2, h3, p { margin: 0; font-weight: 400; }
 /* ── Cámara a pantalla completa + sombras arriba/abajo */
 #stage { position: fixed; inset: 0; background: #000; }
 #view { width: 100%; height: 100%; object-fit: cover; display: block; }
-#view.mirrored { transform: scaleX(-1); }
+#view.mirrored { transform: scaleX(-1); } /* main.js también agrega el zoom en línea */
 #video { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .shade { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply; }
 .shade-top { background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 20.673%); }

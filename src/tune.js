@@ -56,11 +56,15 @@ export class Tuner {
     return this.data[key];
   }
   /** ¿Modelo terminado? (con tallas: todas marcadas) */
-  done(m) {
-    // Listo si se marcó en esta tablet, o si ya viene aprobado en el catálogo (tuneOk) y aquí no se ha tocado
-    const st = (k) => this.data[k]?.status || (m.tuneOk && !this.data[k] ? 'listo' : '');
-    return m.sizes?.length > 1 ? m.sizes.every((z) => st(this.key(m.id, z.talla))) || (m.tuneOk && !Object.keys(this.data).some((k) => k.startsWith(m.id + '@'))) : !!st(m.id);
+  /** Estado de un modelo/talla: el marcado en esta tablet, o "listo" si viene aprobado en el catálogo. */
+  statusOf(m, talla = '') {
+    const k = this.key(m.id, talla), local = this.data[k]?.status;
+    if (local) return local;
+    if (this.data[k]?.t) return ''; // se tocó aquí y no se marcó: pendiente
+    return m.tuneOk || (talla && m.tunesOk?.includes(talla)) ? 'listo' : '';
   }
+  /** ¿Modelo terminado? (con tallas: todas) */
+  done(m) { return m.sizes?.length > 1 ? m.sizes.every((z) => this.statusOf(m, z.talla)) : !!this.statusOf(m); }
 
   open() {
     if (!this.h.catalog.models.length) return;
@@ -82,7 +86,7 @@ export class Tuner {
     this.id = id; this.mode = 'fit'; this.recog = null;
     this.h.selectModel(id);
     // Con tallas: empezar por la primera talla pendiente
-    const m = this.cur(), z = m?.sizes?.length > 1 && m.sizes.find((s) => !this.data[this.key(id, s.talla)]?.status);
+    const m = this.cur(), z = m?.sizes?.length > 1 && m.sizes.find((s) => !this.statusOf(m, s.talla));
     if (z) this.h.selectSize(z.talla);
     this.lastKey = this.key();
     this.draw();
@@ -161,7 +165,7 @@ export class Tuner {
     else if (a === 'ok' || a === 'skip') {
       r.status = a === 'ok' ? 'listo' : 'no-esta'; r.t = Date.now(); this.flushEv(); saveTunes(this.data);
       // Con tallas: pasar a la siguiente talla pendiente del mismo modelo antes de cambiar de modelo
-      const m = this.cur(), z = m.sizes?.length > 1 && m.sizes.find((s) => !this.data[this.key(m.id, s.talla)]?.status);
+      const m = this.cur(), z = m.sizes?.length > 1 && m.sizes.find((s) => !this.statusOf(m, s.talla));
       if (z) { this.h.selectSize(z.talla); this.lastKey = this.key(); this.draw(); } else this.nextPending();
     }
     else if (a === 'recog') { this.mode = 'recog'; this.recog = null; this.h.selectModel(''); this.h.matcher.reset(); this.draw(); }
@@ -201,7 +205,7 @@ export class Tuner {
     const r = this.rec(), L = this.list(), i = L.findIndex((x) => x.id === m.id);
     const done = L.filter((x) => this.done(x)).length, talla = this.talla();
     const tallas = m.sizes?.length > 1 ? m.sizes.map((z) => {
-      const st = this.data[this.key(m.id, z.talla)]?.status;
+      const st = this.statusOf(m, z.talla);
       return `<button class="chip${talla === z.talla ? ' solid' : ''}" data-a="size" data-t="${z.talla}">${z.talla}${st ? (st === 'listo' ? ' ✓' : ' –') : ''}</button>`;
     }).join('') : '';
     const rc = r.recog ? (r.recog.ok ? '✓ Lo reconoce' : `✗ Lo confunde con ${this.h.catalog.models.find((x) => x.id === r.recog.got)?.name || r.recog.got}`) : 'Sin probar';
@@ -212,7 +216,7 @@ export class Tuner {
       </header>
       <div class="tune-model">
         <button class="tune-nav" data-a="prev" aria-label="Anterior">‹</button>
-        <button class="tune-name" data-a="list"><b>${m.name}</b><span>${i + 1} / ${L.length}${talla ? ` · talla ${talla}` : ''}${r.status ? ' · ' + (r.status === 'listo' ? 'listo' : 'no está en tienda') : m.tuneOk ? ' · aprobado (catálogo)' : ' · pendiente'}</span></button>
+        <button class="tune-name" data-a="list"><b>${m.name}</b><span>${i + 1} / ${L.length}${talla ? ` · talla ${talla}` : ''}${r.status ? ' · ' + (r.status === 'listo' ? 'listo' : 'no está en tienda') : this.statusOf(m, talla) ? ' · aprobado (catálogo)' : ' · pendiente'}</span></button>
         <button class="tune-nav" data-a="next" aria-label="Siguiente">›</button>
       </div>
       ${this.mode === 'fit' ? `
