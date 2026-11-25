@@ -1,6 +1,6 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
 import { PAIS } from './pais.js';
-export const VERSION = '0.9.17';
+export const VERSION = '0.9.18';
 // Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
 export const REMOTE_URL = 'https://script.google.com/macros/s/AKfycbyPvqpy4w7FGJdoeyv9uiuFAWJc5VqALXZBugLimZMUqeIU2FZ81lEhLA3s1xzhMQ4/exec';
 
@@ -118,7 +118,9 @@ export const DEFAULTS = {
 // color = transmitancia medida (lo que se pinta sobre la mica); swatch = color de muestra del Figma (UI).
 // Fotoentintadas: con luz UV (exterior) viran a café o gris. Tono activado un poco más claro que la
 // polarizada equivalente (~25–30 % de transmitancia, típico de un fotocromático activado).
-export const PHOTO_TARGETS = { cafe: '#8e867d', gris: '#767676' };
+// Medido en tienda (25-nov) con micas activadas junto a la cara: gris ≈40 % de transmitancia; café algo rosado
+// (la muestra ya se estaba aclarando, así que se dejó ~12 % más oscura que lo medido).
+export const PHOTO_TARGETS = { cafe: '#c49993', gris: '#64686c' };
 
 const ALL_PRESETS = [
   { id: 'pol-verde', group: 'Polarizadas', name: 'Verde', color: '#3d453f', swatch: '#42674E', density: 1, gradient: 0, mirror: 0 },
@@ -143,7 +145,7 @@ export const PRESETS = PAIS.presets.map((id) => ALL_PRESETS.find((p) => p.id ===
 export const isPolarized = (p) => p?.group === 'Polarizadas';
 { const p = PRESETS.find((x) => x.id === PAIS.defaultPreset) || PRESETS[0]; DEFAULTS.lens.preset = p.id; DEFAULTS.lens.color = p.color; }
 
-const KEY = 'vto-micas:config:v19' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
+const KEY = 'vto-micas:config:v20' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
 
 export function merge(base, over) {
   if (!over || typeof over !== 'object') return base;
