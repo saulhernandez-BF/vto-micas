@@ -1,6 +1,6 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
 import { PAIS } from './pais.js';
-export const VERSION = '0.9.15';
+export const VERSION = '0.9.16';
 // Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
 export const REMOTE_URL = 'https://script.google.com/macros/s/AKfycbyPvqpy4w7FGJdoeyv9uiuFAWJc5VqALXZBugLimZMUqeIU2FZ81lEhLA3s1xzhMQ4/exec';
 
@@ -112,7 +112,8 @@ export const DEFAULTS = {
 };
 
 // Micas reales de Ben & Frank. "color" = transmitancia medida por canal (se aplica con multiply):
-//  - Polarizadas: render de la mica de sol ÷ render óptico del mismo armazón (IGOR II OCTAGON).
+//  - Polarizadas (25-nov, tienda): promedio de (a) foto en mesa de luz, al cuadrado (sobre la cara la piel bajo la mica
+//    también recibe la luz filtrada: doble paso) y (b) medición en vivo sobre la cara (piel bajo la mica ÷ mejilla, sin reflejos).
 //  - Entintadas: foto de la mica sobre fondo gris ÷ fondo (tabla de colores de Zul).
 // color = transmitancia medida (lo que se pinta sobre la mica); swatch = color de muestra del Figma (UI).
 // Fotoentintadas: con luz UV (exterior) viran a café o gris. Tono activado un poco más claro que la
@@ -120,10 +121,10 @@ export const DEFAULTS = {
 export const PHOTO_TARGETS = { cafe: '#8e867d', gris: '#767676' };
 
 const ALL_PRESETS = [
-  { id: 'pol-verde', group: 'Polarizadas', name: 'Verde', color: '#3c453d', swatch: '#42674E', density: 1, gradient: 0, mirror: 0 },
-  { id: 'pol-cafe', group: 'Polarizadas', name: 'Café', color: '#685e51', swatch: '#6C5F4C', density: 1, gradient: 0, mirror: 0 },
-  { id: 'pol-gris', group: 'Polarizadas', name: 'Gris', color: '#494949', swatch: '#545A5C', density: 1, gradient: 0, mirror: 0 },
-  { id: 'pol-azul', group: 'Polarizadas', name: 'Azul', color: '#314767', swatch: '#005891', density: 1, gradient: 0, mirror: 0 },
+  { id: 'pol-verde', group: 'Polarizadas', name: 'Verde', color: '#3d453f', swatch: '#42674E', density: 1, gradient: 0, mirror: 0 },
+  { id: 'pol-cafe', group: 'Polarizadas', name: 'Café', color: '#593839', swatch: '#6C5F4C', density: 1, gradient: 0, mirror: 0 },
+  { id: 'pol-gris', group: 'Polarizadas', name: 'Gris', color: '#282b36', swatch: '#545A5C', density: 1, gradient: 0, mirror: 0 },
+  { id: 'pol-azul', group: 'Polarizadas', name: 'Azul', color: '#2e3541', swatch: '#005891', density: 1, gradient: 0, mirror: 0 },
   // Fotoentintadas (interior): medidas en tienda 25-nov de fotos de las micas reales sobre hoja blanca (mica ÷ hoja)
   // y validadas en vivo por Zul sobre el armazón demo.
   { id: 'azufre', group: 'Fotoentintadas', name: 'Azufre', color: '#f0cfbb', swatch: '#BF9000', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
@@ -142,7 +143,7 @@ export const PRESETS = PAIS.presets.map((id) => ALL_PRESETS.find((p) => p.id ===
 export const isPolarized = (p) => p?.group === 'Polarizadas';
 { const p = PRESETS.find((x) => x.id === PAIS.defaultPreset) || PRESETS[0]; DEFAULTS.lens.preset = p.id; DEFAULTS.lens.color = p.color; }
 
-const KEY = 'vto-micas:config:v17' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
+const KEY = 'vto-micas:config:v18' + (PAIS.id === 'mx' ? '' : ':' + PAIS.id); // config separada por país
 
 export function merge(base, over) {
   if (!over || typeof over !== 'object') return base;
