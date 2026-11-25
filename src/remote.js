@@ -5,12 +5,15 @@ import { PAIS } from './pais.js';
 
 const STORE_KEY = 'vto-micas:tienda';
 
+// ?tienda=polanco la guarda en el equipo; ?tienda= (vacío) o ?tienda=no la borra (compus de prueba)
 export function getStore() {
-  const q = new URLSearchParams(location.search).get('tienda');
+  const sp = new URLSearchParams(location.search);
+  const q = sp.has('tienda') ? (sp.get('tienda') || '').trim().toLowerCase() : null;
   try {
-    if (q) localStorage.setItem(STORE_KEY, q.trim().toLowerCase());
+    if (q === '' || q === 'no') localStorage.removeItem(STORE_KEY);
+    else if (q) localStorage.setItem(STORE_KEY, q);
     return localStorage.getItem(STORE_KEY) || '';
-  } catch { return q || ''; }
+  } catch { return q && q !== 'no' ? q : ''; }
 }
 export function setStore(v) { try { localStorage.setItem(STORE_KEY, String(v || '').trim().toLowerCase()); } catch {} }
 

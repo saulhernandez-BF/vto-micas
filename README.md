@@ -87,6 +87,7 @@ Todo lo que cambia entre países vive en **`src/pais.js`**; el resto del código
 | Parámetro | Qué hace | ¿Se queda guardado en la tablet? |
 |---|---|---|
 | `?tienda=polanco` | Nombre de la tienda. Todas sus visitas llegan a la hoja central con ese nombre. | Sí |
+| `?tienda=` (vacío) o `?tienda=no` | Borra la tienda guardada (para compus de prueba: sus visitas llegan como `sin-tienda`). | Sí |
 | `?kiosk` | Modo kiosko (ver [sección 10](#10-modo-kiosko)). | Sí |
 | `?kiosk=0` | Apaga el modo kiosko. | Sí |
 
