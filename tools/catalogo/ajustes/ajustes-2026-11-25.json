@@ -1,0 +1,556 @@
+{
+ "app": "vto-micas",
+ "kind": "tune",
+ "exported": "2026-11-25T22:27:15.540Z",
+ "models": [
+  {
+   "id": "artigas",
+   "talla": "XG",
+   "name": "Artigas",
+   "k": 1.15,
+   "dy": -5.5,
+   "dbx": 2.25,
+   "status": ""
+  },
+  {
+   "id": "barb",
+   "talla": "G",
+   "name": "Barb",
+   "k": 1.015,
+   "dy": -1.5,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "barb",
+   "talla": "XG",
+   "name": "Barb",
+   "k": 1.095,
+   "dy": -3.75,
+   "dbx": 3.75,
+   "status": "listo"
+  },
+  {
+   "id": "billie-reform",
+   "talla": "",
+   "name": "Billie ReForm",
+   "k": 1.045,
+   "dy": 0.75,
+   "dbx": -1,
+   "status": ""
+  },
+  {
+   "id": "billie",
+   "talla": "G",
+   "name": "Billie",
+   "k": 1.07,
+   "dy": -4.5,
+   "dbx": 3.25,
+   "status": ""
+  },
+  {
+   "id": "bill-ventana",
+   "talla": "",
+   "name": "Bill Ventana",
+   "k": 1.095,
+   "dy": -1.75,
+   "dbx": 0,
+   "status": ""
+  },
+  {
+   "id": "bill",
+   "talla": "",
+   "name": "Bill",
+   "k": 1.12,
+   "dy": -0.5,
+   "dbx": 0,
+   "status": ""
+  },
+  {
+   "id": "benny",
+   "talla": "",
+   "name": "Benny",
+   "k": 1.105,
+   "dy": -4.75,
+   "dbx": 2.75,
+   "status": ""
+  },
+  {
+   "id": "barragan",
+   "talla": "",
+   "name": "Barragán",
+   "k": 1.12,
+   "dy": -1,
+   "dbx": 0,
+   "status": ""
+  },
+  {
+   "id": "c-3po",
+   "talla": "",
+   "name": "C-3PO",
+   "k": 1.165,
+   "dy": -1.5,
+   "dbx": 4.5,
+   "status": "listo"
+  },
+  {
+   "id": "desmond",
+   "talla": "",
+   "name": "Desmond",
+   "k": 1.12,
+   "dy": -0.25,
+   "dbx": 5.5,
+   "status": "listo"
+  },
+  {
+   "id": "gloria",
+   "talla": "XG",
+   "name": "Gloria",
+   "k": 1.145,
+   "dy": -5.75,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "glorp",
+   "talla": "",
+   "name": "Glorp",
+   "k": 1.12,
+   "dy": -8.5,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "glorp-antimateria",
+   "talla": "",
+   "name": "Glorp Antimateria",
+   "k": 1,
+   "dy": -3,
+   "dbx": 0,
+   "status": ""
+  },
+  {
+   "id": "josefina",
+   "talla": "",
+   "name": "Josefina",
+   "k": 1.12,
+   "dy": -2.5,
+   "dbx": 4.75,
+   "status": "listo"
+  },
+  {
+   "id": "leia",
+   "talla": "",
+   "name": "Leia",
+   "k": 1.1,
+   "dy": 0,
+   "dbx": 3.25,
+   "status": "listo"
+  },
+  {
+   "id": "leon",
+   "talla": "XCH",
+   "name": "Leon",
+   "k": 1.36,
+   "dy": 4.75,
+   "dbx": 7.5,
+   "status": "listo"
+  },
+  {
+   "id": "leonard",
+   "talla": "",
+   "name": "Leonard",
+   "k": 1.14,
+   "dy": 5.5,
+   "dbx": 7,
+   "status": "listo"
+  },
+  {
+   "id": "lisa",
+   "talla": "",
+   "name": "Lisa",
+   "k": 1.16,
+   "dy": -2,
+   "dbx": 3,
+   "status": "listo"
+  },
+  {
+   "id": "marcela",
+   "talla": "M",
+   "name": "Marcela",
+   "k": 1.07,
+   "dy": 2,
+   "dbx": -1.5,
+   "status": "listo"
+  },
+  {
+   "id": "marcela",
+   "talla": "G",
+   "name": "Marcela",
+   "k": 1.095,
+   "dy": 0,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "marcela-reform",
+   "talla": "",
+   "name": "Marcela ReForm",
+   "k": 1.14,
+   "dy": 2.25,
+   "dbx": 3.25,
+   "status": "listo"
+  },
+  {
+   "id": "maria",
+   "talla": "",
+   "name": "Maria",
+   "k": 1.07,
+   "dy": -2.25,
+   "dbx": 1,
+   "status": "listo"
+  },
+  {
+   "id": "martin",
+   "talla": "",
+   "name": "Martin",
+   "k": 1.1,
+   "dy": -5.25,
+   "dbx": -1,
+   "status": "listo"
+  },
+  {
+   "id": "mercedes",
+   "talla": "",
+   "name": "Mercedes",
+   "k": 1.09,
+   "dy": 2.5,
+   "dbx": 1,
+   "status": "listo"
+  },
+  {
+   "id": "meryl",
+   "talla": "",
+   "name": "Meryl",
+   "k": 1,
+   "dy": 0,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "molina",
+   "talla": "",
+   "name": "Molina",
+   "k": 1.115,
+   "dy": -5.75,
+   "dbx": 2.5,
+   "status": "listo"
+  },
+  {
+   "id": "molina-caviar",
+   "talla": "",
+   "name": "Molina Caviar",
+   "k": 1.195,
+   "dy": 6.5,
+   "dbx": 5.75,
+   "status": "listo"
+  },
+  {
+   "id": "murray",
+   "talla": "",
+   "name": "Murray",
+   "k": 1.105,
+   "dy": -0.75,
+   "dbx": 1.25,
+   "status": "listo"
+  },
+  {
+   "id": "nadia-iii",
+   "talla": "",
+   "name": "Nadia III",
+   "k": 1.215,
+   "dy": 2,
+   "dbx": 7.25,
+   "status": "listo"
+  },
+  {
+   "id": "nadia-iv",
+   "talla": "",
+   "name": "Nadia IV",
+   "k": 1.175,
+   "dy": 3,
+   "dbx": 2.25,
+   "status": "listo"
+  },
+  {
+   "id": "obi-wan",
+   "talla": "",
+   "name": "Obi-Wan",
+   "k": 1.235,
+   "dy": 7.5,
+   "dbx": 8.5,
+   "status": "listo"
+  },
+  {
+   "id": "orozco",
+   "talla": "CH",
+   "name": "Orozco",
+   "k": 1.265,
+   "dy": 6,
+   "dbx": 3.75,
+   "status": "listo"
+  },
+  {
+   "id": "orozco",
+   "talla": "M",
+   "name": "Orozco",
+   "k": 1.245,
+   "dy": -6.75,
+   "dbx": 3.75,
+   "status": "listo"
+  },
+  {
+   "id": "parks-caviar",
+   "talla": "M",
+   "name": "Parks Caviar",
+   "k": 1.125,
+   "dy": -5.5,
+   "dbx": 5.25,
+   "status": "listo"
+  },
+  {
+   "id": "parks-caviar",
+   "talla": "G",
+   "name": "Parks Caviar",
+   "k": 1.1,
+   "dy": -4,
+   "dbx": 2.5,
+   "status": "listo"
+  },
+  {
+   "id": "pedro",
+   "talla": "",
+   "name": "Pedro",
+   "k": 1.15,
+   "dy": -6,
+   "dbx": 0.75,
+   "status": "listo"
+  },
+  {
+   "id": "phoebe",
+   "talla": "",
+   "name": "Phoebe",
+   "k": 1.175,
+   "dy": -10,
+   "dbx": 2.75,
+   "status": "listo"
+  },
+  {
+   "id": "piedad",
+   "talla": "",
+   "name": "Piedad",
+   "k": 1.125,
+   "dy": -1.5,
+   "dbx": 0.75,
+   "status": "listo"
+  },
+  {
+   "id": "r2-d2",
+   "talla": "",
+   "name": "R2-D2",
+   "k": 1.165,
+   "dy": -4.75,
+   "dbx": 5,
+   "status": "listo"
+  },
+  {
+   "id": "renzo",
+   "talla": "",
+   "name": "Renzo",
+   "k": 1.16,
+   "dy": -2.75,
+   "dbx": 2,
+   "status": "listo"
+  },
+  {
+   "id": "rivera",
+   "talla": "CH",
+   "name": "Rivera",
+   "k": 1.36,
+   "dy": -8,
+   "dbx": 10,
+   "status": "listo"
+  },
+  {
+   "id": "rivera",
+   "talla": "M",
+   "name": "Rivera",
+   "k": 1.04,
+   "dy": -1.75,
+   "dbx": -6.5,
+   "status": "listo"
+  },
+  {
+   "id": "rivera",
+   "talla": "XG",
+   "name": "Rivera",
+   "k": 1.095,
+   "dy": -0.75,
+   "dbx": -2.5,
+   "status": "listo"
+  },
+  {
+   "id": "rivers",
+   "talla": "",
+   "name": "Rivers",
+   "k": 1.095,
+   "dy": 0,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "robin",
+   "talla": "M",
+   "name": "Robin",
+   "k": 1.08,
+   "dy": -1,
+   "dbx": -2.25,
+   "status": "listo"
+  },
+  {
+   "id": "robin",
+   "talla": "G",
+   "name": "Robin",
+   "k": 1.135,
+   "dy": -0.5,
+   "dbx": 2,
+   "status": "listo"
+  },
+  {
+   "id": "robin",
+   "talla": "XG",
+   "name": "Robin",
+   "k": 1.165,
+   "dy": 0,
+   "dbx": 2.25,
+   "status": "listo"
+  },
+  {
+   "id": "robin-caviar",
+   "talla": "M",
+   "name": "Robin Caviar",
+   "k": 1.11,
+   "dy": -3.25,
+   "dbx": 3.25,
+   "status": "listo"
+  },
+  {
+   "id": "robin-caviar",
+   "talla": "G",
+   "name": "Robin Caviar",
+   "k": 1.07,
+   "dy": -0.5,
+   "dbx": -2.75,
+   "status": "listo"
+  },
+  {
+   "id": "robin-caviar",
+   "talla": "XG",
+   "name": "Robin Caviar",
+   "k": 1.19,
+   "dy": 0.25,
+   "dbx": 3.25,
+   "status": "listo"
+  },
+  {
+   "id": "rogers",
+   "talla": "",
+   "name": "Rogers",
+   "k": 1.13,
+   "dy": -0.5,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "rosamaria",
+   "talla": "",
+   "name": "Rosamaria",
+   "k": 1.115,
+   "dy": 2.75,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "saramago",
+   "talla": "",
+   "name": "Saramago",
+   "k": 1.24,
+   "dy": -1.25,
+   "dbx": 6.25,
+   "status": "listo"
+  },
+  {
+   "id": "testa",
+   "talla": "",
+   "name": "Testa",
+   "k": 1.06,
+   "dy": -1.5,
+   "dbx": -3.25,
+   "status": "listo"
+  },
+  {
+   "id": "tina",
+   "talla": "",
+   "name": "Tina",
+   "k": 1.09,
+   "dy": 0,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "truman",
+   "talla": "",
+   "name": "Truman",
+   "k": 1.08,
+   "dy": -2.25,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "viktor",
+   "talla": "",
+   "name": "Viktor",
+   "k": 1.07,
+   "dy": -1.75,
+   "dbx": 0,
+   "status": "listo"
+  },
+  {
+   "id": "vilma",
+   "talla": "",
+   "name": "Vilma",
+   "k": 1.17,
+   "dy": -3.75,
+   "dbx": 3.5,
+   "status": "listo"
+  },
+  {
+   "id": "wong",
+   "talla": "",
+   "name": "Wong",
+   "k": 1.175,
+   "dy": -5.75,
+   "dbx": 5,
+   "status": "listo"
+  },
+  {
+   "id": "yoda",
+   "talla": "",
+   "name": "Yoda",
+   "k": 1.09,
+   "dy": -1.25,
+   "dbx": 0,
+   "status": "listo"
+  }
+ ]
+}
