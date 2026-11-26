@@ -1,6 +1,6 @@
 // Configuración central. Todo lo ajustable vive aquí y es editable desde el panel de debug.
 import { PAIS } from './pais.js';
-export const VERSION = '0.9.19';
+export const VERSION = '0.9.20';
 // Hoja central de reportes (Apps Script › Implementar › App web). Vacío = sólo se guarda en la tablet.
 export const REMOTE_URL = 'https://script.google.com/macros/s/AKfycbyPvqpy4w7FGJdoeyv9uiuFAWJc5VqALXZBugLimZMUqeIU2FZ81lEhLA3s1xzhMQ4/exec';
 
@@ -133,7 +133,7 @@ const ALL_PRESETS = [
   { id: 'azufre', group: 'Fotoentintadas', name: 'Azufre', color: '#f0cfbb', swatch: '#DB9775', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
   { id: 'rosarito', group: 'Fotoentintadas', name: 'Rosarito', color: '#fffad8', swatch: '#FFF09B', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
   { id: 'celestun', group: 'Fotoentintadas', name: 'Celestún', color: '#ffd5e9', swatch: '#FFA3CC', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
-  { id: 'caleta', group: 'Fotoentintadas', name: 'Caleta', color: '#cde8fc', swatch: '#94C9F8', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
+  { id: 'caleta', group: 'Fotoentintadas', name: 'Caleta', color: '#cde8fc', swatch: '#94C9F8', photo: 'cafe', density: 1, gradient: 0, mirror: 0 },
   { id: 'mermejita', group: 'Fotoentintadas', name: 'Mermejita', color: '#cfd8cd', swatch: '#97A894', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
   { id: 'miramar', group: 'Fotoentintadas', name: 'Miramar', color: '#c7c9f2', swatch: '#898DE0', photo: 'gris', density: 1, gradient: 0, mirror: 0 },
   // Chile · entintados (sin fotoentintado). Medidos de la foto de Zul (3 micas sobre pared blanca): mica ÷ pared.
